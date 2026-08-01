@@ -74,6 +74,9 @@ export const adminApi = {
   updateBanner: (id: string, data: any): Promise<any> => apiClient.patch(`/admin/banners/${id}`, data),
   deleteBanner: (id: string): Promise<any> => apiClient.delete(`/admin/banners/${id}`),
 
+  // Categories
+  getCategories: (): Promise<any> => apiClient.get('/categories/admin/all'),
+
   // Platform Settings
   getSettings: (): Promise<any> => apiClient.get('/admin/settings'),
   updateSettings: (data: any): Promise<any> => apiClient.patch('/admin/settings', data),

@@ -31,9 +31,20 @@ export default function InventoryPage() {
     fetchInventory();
   }, []);
 
-  const healthyCount = inventory.filter(i => i.status === 'in_stock' || (i.stockLevel > (i.threshold || 0))).length;
-  const lowStockCount = inventory.filter(i => i.status === 'low_stock' || (i.stockLevel > 0 && i.stockLevel <= (i.threshold || 0))).length;
-  const outOfStockCount = inventory.filter(i => i.status === 'out_of_stock' || i.stockLevel === 0).length;
+  const healthyCount = inventory.filter(i => {
+    const available = i.available ?? i.quantity ?? (i as any).stockLevel ?? 0;
+    const threshold = i.reorderPoint ?? (i as any).threshold ?? 0;
+    return (i as any).status === 'in_stock' || available > threshold;
+  }).length;
+  const lowStockCount = inventory.filter(i => {
+    const available = i.available ?? i.quantity ?? (i as any).stockLevel ?? 0;
+    const threshold = i.reorderPoint ?? (i as any).threshold ?? 0;
+    return (i as any).status === 'low_stock' || (available > 0 && available <= threshold);
+  }).length;
+  const outOfStockCount = inventory.filter(i => {
+    const available = i.available ?? i.quantity ?? (i as any).stockLevel ?? 0;
+    return (i as any).status === 'out_of_stock' || available === 0;
+  }).length;
 
   return (
     <div className="space-y-6">
@@ -105,18 +116,26 @@ export default function InventoryPage() {
                   </td>
                 </tr>
               ) : (
-                inventory.map((item) => (
-                  <tr key={item.id || (item as any)._id} className="hover:bg-slate-900/50 transition-colors">
+                inventory.map((item: any) => {
+                  const qty = item.available ?? item.quantity ?? item.stockLevel ?? 0;
+                  const threshold = item.reorderPoint ?? item.threshold ?? 10;
+                  let status = 'in_stock';
+                  if (qty === 0) status = 'out_of_stock';
+                  else if (qty <= threshold) status = 'low_stock';
+                  const title = item.productId?.name || item.productTitle || item.name || `Product SKU: ${item.sku}`;
+
+                  return (
+                  <tr key={item.id || item._id} className="hover:bg-slate-900/50 transition-colors">
                     <td className="py-3.5 px-4 font-semibold text-slate-200">
-                      <span className="block">{item.productTitle || (item as any).name || 'Unnamed Product'}</span>
+                      <span className="block">{title}</span>
                       <span className="text-[10px] font-mono text-slate-500">{item.sku || 'N/A'}</span>
                     </td>
-                    <td className="py-3.5 px-4 text-slate-400">{item.warehouseLocation || 'Central Warehouse'}</td>
-                    <td className="py-3.5 px-4 font-bold text-slate-100">{item.stockLevel ?? (item as any).quantity ?? 0} units</td>
-                    <td className="py-3.5 px-4 text-slate-400 font-mono">Min {item.threshold ?? 10} units</td>
+                    <td className="py-3.5 px-4 text-slate-400">{item.warehouse || item.warehouseLocation || 'Central Warehouse'}</td>
+                    <td className="py-3.5 px-4 font-bold text-slate-100">{qty} units</td>
+                    <td className="py-3.5 px-4 text-slate-400 font-mono">Min {threshold} units</td>
                     <td className="py-3.5 px-4">
-                      <Badge status={item.status || 'in_stock'}>
-                        {item.status === 'in_stock' ? 'In Stock' : item.status === 'low_stock' ? 'Low Stock Alert' : 'Out of Stock'}
+                      <Badge status={status}>
+                        {status === 'in_stock' ? 'In Stock' : status === 'low_stock' ? 'Low Stock Alert' : 'Out of Stock'}
                       </Badge>
                     </td>
                     <td className="py-3.5 px-4 text-right">
@@ -125,7 +144,8 @@ export default function InventoryPage() {
                       </button>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>

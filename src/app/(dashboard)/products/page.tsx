@@ -35,10 +35,11 @@ export default function ProductsPage() {
   }, []);
 
   const filteredProducts = products.filter(
-    (p) => {
-      const titleStr = p.title || (p as any).name || '';
-      const skuStr = p.sku || '';
-      const catStr = p.category || (p as any).categoryName || '';
+    (p: any) => {
+      const titleStr = p.name || p.title || '';
+      const primaryVariant = p.variants && p.variants.length > 0 ? p.variants[0] : null;
+      const skuStr = primaryVariant?.sku || p.sku || '';
+      const catStr = p.categorySlug || p.category || '';
       return titleStr.toLowerCase().includes(searchTerm.toLowerCase()) ||
         skuStr.toLowerCase().includes(searchTerm.toLowerCase()) ||
         catStr.toLowerCase().includes(searchTerm.toLowerCase());
@@ -113,44 +114,55 @@ export default function ProductsPage() {
                   </td>
                 </tr>
               ) : (
-                filteredProducts.map((product) => (
-                  <tr key={product.id || (product as any)._id} className="hover:bg-slate-900/50 transition-colors">
-                    <td className="py-3.5 px-4 font-semibold text-slate-200">
-                      <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-emerald-400">
-                          <Package className="h-4 w-4" />
+                filteredProducts.map((product: any) => {
+                  const primaryVariant = product.variants && product.variants.length > 0 ? product.variants[0] : null;
+                  const displayTitle = product.name || product.title || 'Unnamed Product';
+                  const displaySku = primaryVariant?.sku || product.sku || 'N/A';
+                  const displayCat = product.categorySlug || product.category || 'General';
+                  const displayPrice = primaryVariant?.price || product.price || 0;
+                  // Inventory is a separate service, default to 0 for now until inventory is integrated
+                  const stock = product.stockQuantity ?? product.stock ?? 0;
+                  const isActive = product.isActive !== undefined ? product.isActive : true;
+
+                  return (
+                    <tr key={product._id || product.id} className="hover:bg-slate-900/50 transition-colors">
+                      <td className="py-3.5 px-4 font-semibold text-slate-200">
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-emerald-400">
+                            <Package className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <span className="block">{displayTitle}</span>
+                            <span className="text-[10px] text-slate-400">Updated {formatDate(product.updatedAt || product.createdAt)}</span>
+                          </div>
                         </div>
-                        <div>
-                          <span className="block">{product.title || (product as any).name || 'Unnamed Product'}</span>
-                          <span className="text-[10px] text-slate-400">Updated {formatDate(product.updatedAt || (product as any).createdAt)}</span>
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-slate-400">{displaySku}</td>
+                      <td className="py-3.5 px-4 text-slate-300">{displayCat}</td>
+                      <td className="py-3.5 px-4 font-semibold text-emerald-400">{formatCurrency(displayPrice)}</td>
+                      <td className="py-3.5 px-4 font-mono">
+                        <span className={stock <= 5 ? 'text-amber-400 font-bold' : 'text-slate-300'}>
+                          {stock} units
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <Badge status={!isActive ? 'inactive' : (stock === 0 ? 'out_of_stock' : product.status || 'active')}>
+                          {!isActive ? 'Inactive' : (stock === 0 ? 'Out of Stock' : product.status || 'Active')}
+                        </Badge>
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-emerald-400 transition-colors">
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-rose-400 transition-colors">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-slate-400">{product.sku || 'N/A'}</td>
-                    <td className="py-3.5 px-4 text-slate-300">{product.category || (product as any).categoryName || 'General'}</td>
-                    <td className="py-3.5 px-4 font-semibold text-emerald-400">{formatCurrency(product.price || 0)}</td>
-                    <td className="py-3.5 px-4 font-mono">
-                      <span className={(product.stockQuantity ?? (product as any).stock ?? 0) <= 5 ? 'text-amber-400 font-bold' : 'text-slate-300'}>
-                        {product.stockQuantity ?? (product as any).stock ?? 0} units
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <Badge status={(product.stockQuantity ?? (product as any).stock ?? 0) === 0 ? 'out_of_stock' : product.status || 'active'}>
-                        {(product.stockQuantity ?? (product as any).stock ?? 0) === 0 ? 'Out of Stock' : product.status || 'Active'}
-                      </Badge>
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-emerald-400 transition-colors">
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-rose-400 transition-colors">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

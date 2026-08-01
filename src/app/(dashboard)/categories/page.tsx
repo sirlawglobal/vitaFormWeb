@@ -16,29 +16,19 @@ export default function CategoriesPage() {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      // Derive categories from live catalog products if dedicated categories endpoint is not separate
-      const data: any = await adminApi.getProducts();
-      const liveProds: any[] = extractDataArray(data);
-      const catMap = new Map<string, ProductCategory>();
+      const data: any = await adminApi.getCategories();
+      const liveCategories: any[] = extractDataArray(data);
       
-      liveProds.forEach((p, idx) => {
-        const catName = p.category || p.categoryName || 'General';
-        const slug = catName.toLowerCase().replace(/\s+/g, '-');
-        if (!catMap.has(catName)) {
-          catMap.set(catName, {
-            id: `cat_${idx + 1}`,
-            name: catName,
-            slug,
-            description: `${catName} product line`,
-            productCount: 1,
-            isActive: true,
-          });
-        } else {
-          const existing = catMap.get(catName)!;
-          existing.productCount += 1;
-        }
-      });
-      setCategories(Array.from(catMap.values()));
+      const mappedCats: ProductCategory[] = liveCategories.map((cat: any) => ({
+        id: cat._id || cat.id,
+        name: cat.name || 'Unnamed Category',
+        slug: cat.slug || 'unknown',
+        description: cat.description || `${cat.name || 'Category'} product line`,
+        productCount: 0, // Not provided directly by the category list endpoint
+        isActive: cat.isActive !== undefined ? cat.isActive : true,
+      }));
+      
+      setCategories(mappedCats);
     } catch (err) {
       console.warn('[Categories] Failed to fetch categories:', err);
       setCategories([]);
@@ -73,7 +63,7 @@ export default function CategoriesPage() {
       {/* Categories Grid */}
       {categories.length === 0 ? (
         <Card className="p-8 text-center text-slate-500 text-xs">
-          {loading ? 'Deriving catalog categories...' : 'No product categories found in the live catalog.'}
+          {loading ? 'Fetching categories...' : 'No product categories found.'}
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -98,7 +88,7 @@ export default function CategoriesPage() {
 
               <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
                 <span className="text-slate-400">
-                  Product Count: <strong className="text-slate-200">{cat.productCount} SKUs</strong>
+                  Product Count: <strong className="text-slate-200">Dynamic</strong>
                 </span>
                 <div className="flex items-center gap-2">
                   <button className="rounded-md border border-slate-800 bg-slate-900 px-2.5 py-1 text-slate-300 hover:text-emerald-400">
