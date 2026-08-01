@@ -14,24 +14,29 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [products, setProducts] = useState<ProductItem[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchProducts = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
-      const data: any = await adminApi.getProducts();
-      const liveProds = extractDataArray(data);
-      setProducts(liveProds);
+      const [prodData, catData]: any = await Promise.all([
+        adminApi.getProducts(),
+        adminApi.getCategories()
+      ]);
+      setProducts(extractDataArray(prodData));
+      setCategories(extractDataArray(catData));
     } catch (err) {
-      console.warn('[Products] Failed to fetch products:', err);
+      console.warn('[Products] Failed to fetch data:', err);
       setProducts([]);
+      setCategories([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchProducts();
+    fetchData();
   }, []);
 
   const filteredProducts = products.filter(
@@ -211,10 +216,12 @@ export default function ProductsPage() {
             <div>
               <label className="block text-slate-300 font-medium mb-1">Category</label>
               <select className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none">
-                <option>Orthopaedic Mattresses</option>
-                <option>Spring Mattresses</option>
-                <option>Pillows & Cushions</option>
-                <option>Bedding Accessories</option>
+                <option value="">Select a category...</option>
+                {categories.map((cat: any) => (
+                  <option key={cat._id || cat.id} value={cat._id || cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
