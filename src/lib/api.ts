@@ -90,7 +90,7 @@ export const adminApi = {
 
   // Products & Catalog
   getProducts: (params?: { page?: number; limit?: number; search?: string; category?: string }): Promise<any> =>
-    apiClient.get('/products', { params }),
+    apiClient.get('/products/admin/all', { params }),
   createProduct: (data: any): Promise<any> => apiClient.post('/products', data),
   updateProduct: (id: string, data: any): Promise<any> => apiClient.patch(`/products/${id}`, data),
   deleteProduct: (id: string): Promise<any> => apiClient.delete(`/products/${id}`),
