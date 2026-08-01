@@ -98,6 +98,7 @@ export const adminApi = {
   // Inventory
   getInventory: (params?: { page?: number; limit?: number; lowStockOnly?: boolean }): Promise<any> =>
     apiClient.get('/inventory', { params }),
+  getLowStock: (): Promise<any> => apiClient.get('/inventory/low-stock'),
   adjustInventory: (data: any): Promise<any> => apiClient.post('/inventory/adjust', data),
 
   // Orders

@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
+import { cn, extractDataArray } from '@/lib/utils';
+import { adminApi } from '@/lib/api';
 import {
   LayoutDashboard,
   Package,
@@ -47,7 +48,7 @@ const navigationGroups: NavGroup[] = [
     items: [
       { name: 'Products', href: '/products', icon: Package },
       { name: 'Categories', href: '/categories', icon: Tags },
-      { name: 'Inventory', href: '/inventory', icon: Boxes, badge: 'Low' },
+      { name: 'Inventory', href: '/inventory', icon: Boxes },
     ],
   },
   {
@@ -96,6 +97,22 @@ const navigationGroups: NavGroup[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [lowStockCount, setLowStockCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchLowStock = async () => {
+      try {
+        const res = await adminApi.getLowStock();
+        const data = extractDataArray(res);
+        if (data.length > 0) {
+          setLowStockCount(data.length);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch low stock count for sidebar');
+      }
+    };
+    fetchLowStock();
+  }, []);
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-slate-800 bg-slate-950/95 backdrop-blur-xl flex flex-col justify-between select-none">
@@ -124,6 +141,11 @@ export function Sidebar() {
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+                  
+                  let dynamicBadge = item.badge;
+                  if (item.name === 'Inventory' && lowStockCount !== null) {
+                    dynamicBadge = `${lowStockCount} Low`;
+                  }
 
                   return (
                     <li key={item.name}>
@@ -145,16 +167,16 @@ export function Sidebar() {
                           />
                           <span>{item.name}</span>
                         </div>
-                        {item.badge && (
+                        {dynamicBadge && (
                           <span
                             className={cn(
-                              'rounded-full px-2 py-0.5 text-[10px] font-bold',
-                              item.badge === 'Low' || item.badge === 'Active'
+                              'rounded-full px-2 py-0.5 text-[10px] font-bold whitespace-nowrap',
+                              typeof dynamicBadge === 'string' && dynamicBadge.includes('Low') || dynamicBadge === 'Active'
                                 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                                 : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                             )}
                           >
-                            {item.badge}
+                            {dynamicBadge}
                           </span>
                         )}
                       </Link>
