@@ -19,15 +19,21 @@ export interface UserAccount {
 }
 
 export interface ProductItem {
-  id: string;
-  title: string;
-  sku: string;
-  price: number;
-  stockQuantity: number;
-  category: string;
-  status: 'active' | 'draft' | 'archived';
+  id?: string;
+  _id?: string;
+  title?: string;
+  name?: string;
+  sku?: string;
+  price?: number;
+  stockQuantity?: number;
+  category?: string;
+  categorySlug?: string;
+  status?: 'active' | 'draft' | 'archived';
+  isActive?: boolean;
   imageUrl?: string;
-  updatedAt: string;
+  updatedAt?: string;
+  createdAt?: string;
+  variants?: any[];
 }
 
 export interface ProductCategory {
@@ -40,13 +46,22 @@ export interface ProductCategory {
 }
 
 export interface InventoryItem {
-  id: string;
-  productTitle: string;
+  id?: string;
+  _id?: string;
+  productId?: { _id: string; name: string };
+  productTitle?: string;
   sku: string;
-  stockLevel: number;
-  threshold: number;
-  warehouseLocation: string;
-  status: 'in_stock' | 'low_stock' | 'out_of_stock';
+  quantity?: number;
+  available?: number;
+  reserved?: number;
+  reorderPoint?: number;
+  reorderQuantity?: number;
+  warehouse?: string;
+  
+  stockLevel?: number;
+  threshold?: number;
+  warehouseLocation?: string;
+  status?: 'in_stock' | 'low_stock' | 'out_of_stock';
 }
 
 export interface CustomerOrder {
