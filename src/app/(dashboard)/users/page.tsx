@@ -1,0 +1,211 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Modal } from '@/components/ui/Modal';
+import { Users, UserPlus, Search, Shield, Filter, Mail, Phone, Loader2 } from 'lucide-react';
+import { formatDate, extractDataArray } from '@/lib/utils';
+import { UserAccount } from '@/types';
+import { adminApi } from '@/lib/api';
+
+export default function UsersPage() {
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isProvisionModalOpen, setIsProvisionModalOpen] = useState(false);
+  const [users, setUsers] = useState<UserAccount[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const data: any = await adminApi.getUsers();
+      const liveUsers = extractDataArray(data);
+      setUsers(liveUsers);
+    } catch (err) {
+      console.warn('[Users] Failed to fetch live users:', err);
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const filteredUsers = users.filter((u) => {
+    const fullName = `${(u as any).firstName || ''} ${(u as any).lastName || ''}`.trim();
+    const nameStr = u.name || (u as any).fullName || (u as any).username || fullName || '';
+    const emailStr = u.email || '';
+    const matchesRole = roleFilter === 'all' || u.role === roleFilter;
+    const matchesSearch =
+      nameStr.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      emailStr.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesRole && matchesSearch;
+  });
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-100">User & Staff Management</h1>
+          <p className="text-xs text-slate-400 mt-1">
+            Provision staff user accounts, manage role permissions (`admin`, `support`, `dealer`, `customer`), and monitor active access
+          </p>
+        </div>
+        <button
+          onClick={() => setIsProvisionModalOpen(true)}
+          className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-emerald-400 transition-all shadow-md shadow-emerald-500/20"
+        >
+          <UserPlus className="h-4 w-4" />
+          <span>Provision User Account</span>
+        </button>
+      </div>
+
+      {/* Role Filter Pills */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        {['all', 'admin', 'support', 'dealer', 'customer'].map((role) => (
+          <button
+            key={role}
+            onClick={() => setRoleFilter(role)}
+            className={`rounded-lg px-3.5 py-1.5 text-xs font-medium uppercase tracking-wider transition-all ${
+              roleFilter === role
+                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-slate-200'
+            }`}
+          >
+            {role === 'all' ? 'All Roles' : role}
+          </button>
+        ))}
+      </div>
+
+      {/* Datatable */}
+      <Card className="p-0 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="border-b border-slate-800 bg-slate-900/80 text-slate-400 uppercase tracking-wider text-[10px] font-bold">
+              <tr>
+                <th className="py-3.5 px-4">User Details</th>
+                <th className="py-3.5 px-4">Contact Info</th>
+                <th className="py-3.5 px-4">System Role</th>
+                <th className="py-3.5 px-4">Status</th>
+                <th className="py-3.5 px-4">Provisioned Date</th>
+                <th className="py-3.5 px-4 text-right">RBAC Role</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60 text-slate-300">
+              {filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-slate-500 text-xs">
+                    {loading ? 'Fetching user accounts...' : 'No users found matching criteria.'}
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map((user) => (
+                  <tr key={user.id || (user as any)._id} className="hover:bg-slate-900/50 transition-colors">
+                      <td className="p-4 align-middle">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-800 border border-slate-700 text-xs font-bold text-slate-300 uppercase">
+                            {user.name ? user.name.charAt(0) : ((user as any).firstName ? (user as any).firstName.charAt(0) : 'U')}
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold text-slate-200">
+                              {user.name || `${(user as any).firstName || ''} ${(user as any).lastName || ''}`.trim() || 'Unknown User'}
+                            </div>
+                            <div className="text-xs text-slate-500">{user.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                  <td className="py-3.5 px-4">
+                    <div className="space-y-0.5 text-slate-400">
+                      <div className="flex items-center gap-1.5">
+                        <Mail className="h-3 w-3 text-slate-500" />
+                        <span>{user.email}</span>
+                      </div>
+                      {user.phone && (
+                        <div className="flex items-center gap-1.5 text-[11px]">
+                          <Phone className="h-3 w-3 text-slate-500" />
+                          <span>{user.phone}</span>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="py-3.5 px-4">
+                    <span className="inline-flex items-center gap-1 font-mono uppercase text-[10px] font-bold tracking-wider px-2 py-0.5 rounded border border-slate-700 bg-slate-800 text-slate-300">
+                      <Shield className="h-3 w-3 text-emerald-400" />
+                      {user.role}
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4">
+                    <Badge status={user.isActive ? 'active' : 'inactive'}>
+                      {user.isActive ? 'Active' : 'Disabled'}
+                    </Badge>
+                  </td>
+                  <td className="py-3.5 px-4 text-slate-400">{formatDate(user.createdAt)}</td>
+                  <td className="py-3.5 px-4 text-right">
+                    <button className="rounded-md border border-slate-800 bg-slate-900 px-2.5 py-1 text-xs font-medium text-emerald-400 hover:bg-slate-800">
+                      Change Role
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {/* Provision Staff Modal */}
+      <Modal isOpen={isProvisionModalOpen} onClose={() => setIsProvisionModalOpen(false)} title="Provision Staff User Account">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setIsProvisionModalOpen(false);
+          }}
+          className="space-y-4 text-xs"
+        >
+          <div>
+            <label className="block text-slate-300 font-medium mb-1">Full Name</label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Oluwaseun Adeleke"
+              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-slate-300 font-medium mb-1">Official Email Address</label>
+            <input
+              type="email"
+              required
+              placeholder="o.adeleke@vitafoam.com"
+              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-slate-300 font-medium mb-1">Assigned Security Role</label>
+            <select className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none">
+              <option value="admin">Administrator (Full System Access)</option>
+              <option value="support">Support Agent (Orders & Support Chat)</option>
+              <option value="dealer">Authorized Dealer Representative</option>
+            </select>
+          </div>
+          <div className="pt-4 flex justify-end gap-3 border-t border-slate-800">
+            <button
+              type="button"
+              onClick={() => setIsProvisionModalOpen(false)}
+              className="rounded-lg border border-slate-800 px-4 py-2 text-slate-400 hover:bg-slate-800"
+            >
+              Cancel
+            </button>
+            <button type="submit" className="rounded-lg bg-emerald-500 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-400">
+              Provision Account
+            </button>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
+}

@@ -1,0 +1,100 @@
+import axios from 'axios';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+
+export const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request interceptor to attach JWT token if available
+apiClient.interceptors.request.use(
+  (config) => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response interceptor for unified error logging & response extraction
+apiClient.interceptors.response.use(
+  (response) => response.data,
+  (error) => {
+    const message =
+      error.response?.data?.error?.message ||
+      error.response?.data?.message ||
+      error.message ||
+      'An unexpected API error occurred';
+
+    // Handle 401 Unauthorized: clear stale tokens and redirect to login if on client
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
+      }
+    }
+
+    // Use console.warn instead of console.error to prevent Next.js dev overlay popups on expected 401s
+    console.warn('[API Notice]:', message);
+    return Promise.reject(error.response?.data || { message });
+  }
+);
+
+// Admin API endpoints matching NestJS AdminController & Backend Modules
+export const adminApi = {
+  // Auth
+  login: (credentials: { identifier: string; password: string }): Promise<any> =>
+    apiClient.post('/auth/login', credentials),
+
+  // Overview metrics
+  getDashboardOverview: (): Promise<any> => apiClient.get('/admin/dashboard'),
+  
+  // Users & Staff
+  getUsers: (params?: { page?: number; limit?: number; role?: string; search?: string; isActive?: boolean }): Promise<any> =>
+    apiClient.get('/admin/users', { params }),
+  createUser: (data: { email: string; name: string; role: string; password?: string }): Promise<any> =>
+    apiClient.post('/admin/users', data),
+  updateUserRole: (id: string, role: string): Promise<any> =>
+    apiClient.patch(`/admin/users/${id}/role`, { role }),
+
+  // Banners
+  getBanners: (): Promise<any> => apiClient.get('/admin/banners'),
+  getBannerById: (id: string): Promise<any> => apiClient.get(`/admin/banners/${id}`),
+  createBanner: (data: any): Promise<any> => apiClient.post('/admin/banners', data),
+  updateBanner: (id: string, data: any): Promise<any> => apiClient.patch(`/admin/banners/${id}`, data),
+  deleteBanner: (id: string): Promise<any> => apiClient.delete(`/admin/banners/${id}`),
+
+  // Platform Settings
+  getSettings: (): Promise<any> => apiClient.get('/admin/settings'),
+  updateSettings: (data: any): Promise<any> => apiClient.patch('/admin/settings', data),
+
+  // Audit Logs
+  getAuditLogs: (params?: { page?: number; limit?: number; adminId?: string }): Promise<any> =>
+    apiClient.get('/admin/audit-logs', { params }),
+
+  // Products & Catalog
+  getProducts: (params?: { page?: number; limit?: number; search?: string; category?: string }): Promise<any> =>
+    apiClient.get('/products', { params }),
+  
+  // Inventory
+  getInventory: (params?: { page?: number; limit?: number; lowStockOnly?: boolean }): Promise<any> =>
+    apiClient.get('/inventory', { params }),
+
+  // Orders
+  getOrders: (params?: { page?: number; limit?: number; status?: string }): Promise<any> =>
+    apiClient.get('/orders', { params }),
+
+  // Dealers
+  getDealers: (params?: { page?: number; limit?: number }): Promise<any> =>
+    apiClient.get('/dealers', { params }),
+};
