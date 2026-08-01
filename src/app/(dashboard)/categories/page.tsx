@@ -68,6 +68,17 @@ export default function CategoriesPage() {
     }
   };
 
+  const handleDeleteCategory = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete category "${name}"?`)) return;
+    try {
+      await adminApi.deleteCategory(id);
+      fetchCategories();
+    } catch (err: any) {
+      console.error('Failed to delete category:', err);
+      alert(err?.message || 'Failed to delete category');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header & Sub-tabs */}
@@ -123,6 +134,12 @@ export default function CategoriesPage() {
                 <div className="flex items-center gap-2">
                   <button className="rounded-md border border-slate-800 bg-slate-900 px-2.5 py-1 text-slate-300 hover:text-emerald-400">
                     Edit
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteCategory(cat.id || (cat as any)._id, cat.name)}
+                    className="rounded-md border border-slate-800 bg-slate-900 px-2.5 py-1 text-slate-300 hover:text-rose-400 hover:border-rose-900 transition-colors"
+                  >
+                    Delete
                   </button>
                 </div>
               </div>

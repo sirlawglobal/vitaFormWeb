@@ -77,6 +77,7 @@ export const adminApi = {
   // Categories
   getCategories: (): Promise<any> => apiClient.get('/categories/admin/all'),
   createCategory: (data: any): Promise<any> => apiClient.post('/categories', data),
+  deleteCategory: (id: string): Promise<any> => apiClient.delete(`/categories/${id}`),
 
   // Platform Settings
   getSettings: (): Promise<any> => apiClient.get('/admin/settings'),
@@ -90,6 +91,7 @@ export const adminApi = {
   getProducts: (params?: { page?: number; limit?: number; search?: string; category?: string }): Promise<any> =>
     apiClient.get('/products', { params }),
   createProduct: (data: any): Promise<any> => apiClient.post('/products', data),
+  deleteProduct: (id: string): Promise<any> => apiClient.delete(`/products/${id}`),
   
   // Inventory
   getInventory: (params?: { page?: number; limit?: number; lowStockOnly?: boolean }): Promise<any> =>

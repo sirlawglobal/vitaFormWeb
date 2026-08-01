@@ -104,6 +104,17 @@ export default function ProductsPage() {
     }
   };
 
+  const handleDeleteProduct = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) return;
+    try {
+      await adminApi.deleteProduct(id);
+      fetchData();
+    } catch (err: any) {
+      console.error('Failed to delete product:', err);
+      alert(err?.message || 'Failed to delete product');
+    }
+  };
+
   const filteredProducts = products.filter(
     (p: any) => {
       const titleStr = p.name || p.title || '';
@@ -225,7 +236,10 @@ export default function ProductsPage() {
                           <button className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-emerald-400 transition-colors">
                             <Edit className="h-4 w-4" />
                           </button>
-                          <button className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-rose-400 transition-colors">
+                          <button 
+                            onClick={() => handleDeleteProduct(product._id || product.id, displayTitle)}
+                            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-rose-400 transition-colors"
+                          >
                             <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
