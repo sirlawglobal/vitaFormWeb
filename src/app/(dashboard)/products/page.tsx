@@ -13,6 +13,7 @@ import { adminApi } from '@/lib/api';
 export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -23,6 +24,14 @@ export default function ProductsPage() {
     price: '',
     categoryId: '',
     initialStock: ''
+  });
+  const [editFormData, setEditFormData] = useState({
+    id: '',
+    title: '',
+    sku: '',
+    price: '',
+    categoryId: '',
+    isActive: true
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -98,7 +107,46 @@ export default function ProductsPage() {
       fetchData();
     } catch (err: any) {
       console.error('Failed to create product:', err);
-      alert(err?.message || 'Failed to create product');
+      alert(err?.error?.message || err?.message || 'Failed to create product');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenEdit = (product: any) => {
+    const primaryVariant = product.variants && product.variants.length > 0 ? product.variants[0] : null;
+    setEditFormData({
+      id: product._id || product.id,
+      title: product.name || product.title || '',
+      sku: primaryVariant?.sku || product.sku || '',
+      price: primaryVariant?.price || product.price || '',
+      categoryId: product.categoryId?._id || product.categoryId || '',
+      isActive: product.isActive !== undefined ? product.isActive : true
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        name: editFormData.title,
+        categoryId: editFormData.categoryId,
+        variants: [{
+          sku: editFormData.sku,
+          name: editFormData.title,
+          price: Number(editFormData.price)
+        }],
+        isActive: editFormData.isActive
+      };
+      
+      await adminApi.updateProduct(editFormData.id, payload);
+      setIsEditModalOpen(false);
+      fetchData();
+    } catch (err: any) {
+      console.error('Failed to update product:', err);
+      alert(err?.error?.message || err?.message || 'Failed to update product');
     } finally {
       setIsSubmitting(false);
     }
@@ -111,7 +159,7 @@ export default function ProductsPage() {
       fetchData();
     } catch (err: any) {
       console.error('Failed to delete product:', err);
-      alert(err?.message || 'Failed to delete product');
+      alert(err?.error?.message || err?.message || 'Failed to delete product');
     }
   };
 
@@ -233,7 +281,10 @@ export default function ProductsPage() {
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-emerald-400 transition-colors">
+                          <button 
+                            onClick={() => handleOpenEdit(product)}
+                            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-emerald-400 transition-colors"
+                          >
                             <Edit className="h-4 w-4" />
                           </button>
                           <button 
@@ -337,6 +388,90 @@ export default function ProductsPage() {
             <button type="submit" disabled={isSubmitting} className="rounded-lg bg-emerald-500 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-50 flex items-center gap-2">
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               Save Product
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Product Modal */}
+      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit Product">
+        <form
+          onSubmit={handleUpdateProduct}
+          className="space-y-4 text-xs"
+        >
+          <div>
+            <label className="block text-slate-300 font-medium mb-1">Product Title</label>
+            <input
+              type="text"
+              required
+              value={editFormData.title}
+              onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
+              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-slate-300 font-medium mb-1">SKU Code</label>
+              <input
+                type="text"
+                required
+                value={editFormData.sku}
+                onChange={(e) => setEditFormData({ ...editFormData, sku: e.target.value })}
+                className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-300 font-medium mb-1">Price (NGN)</label>
+              <input
+                type="number"
+                required
+                min="0"
+                value={editFormData.price}
+                onChange={(e) => setEditFormData({ ...editFormData, price: e.target.value })}
+                className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-slate-300 font-medium mb-1">Category</label>
+              <select 
+                required
+                value={editFormData.categoryId}
+                onChange={(e) => setEditFormData({ ...editFormData, categoryId: e.target.value })}
+                className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+              >
+                <option value="">Select a category...</option>
+                {categories.map((cat: any) => (
+                  <option key={cat._id || cat.id} value={cat._id || cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2 pt-6">
+              <input
+                type="checkbox"
+                id="isProductActive"
+                checked={editFormData.isActive}
+                onChange={(e) => setEditFormData({ ...editFormData, isActive: e.target.checked })}
+                className="rounded border-slate-800 bg-slate-950 text-emerald-500 focus:ring-emerald-500"
+              />
+              <label htmlFor="isProductActive" className="text-slate-300 font-medium">Product is Active</label>
+            </div>
+          </div>
+          <div className="pt-4 flex justify-end gap-3 border-t border-slate-800">
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => setIsEditModalOpen(false)}
+              className="rounded-lg border border-slate-800 px-4 py-2 text-slate-400 hover:bg-slate-800 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button type="submit" disabled={isSubmitting} className="rounded-lg bg-emerald-500 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-50 flex items-center gap-2">
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              Update Product
             </button>
           </div>
         </form>

@@ -15,7 +15,9 @@ export default function CategoriesPage() {
   const [loading, setLoading] = useState(false);
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', description: '' });
+  const [editFormData, setEditFormData] = useState({ id: '', name: '', description: '', isActive: true });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchCategories = async () => {
@@ -62,7 +64,37 @@ export default function CategoriesPage() {
       fetchCategories();
     } catch (err: any) {
       console.error('Failed to create category:', err);
-      alert(err?.message || 'Failed to create category');
+      alert(err?.error?.message || err?.message || 'Failed to create category');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenEdit = (cat: ProductCategory) => {
+    setEditFormData({
+      id: cat.id,
+      name: cat.name,
+      description: cat.description || '',
+      isActive: cat.isActive !== undefined ? cat.isActive : true
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        name: editFormData.name,
+        description: editFormData.description,
+        isActive: editFormData.isActive
+      };
+      await adminApi.updateCategory(editFormData.id, payload);
+      setIsEditModalOpen(false);
+      fetchCategories();
+    } catch (err: any) {
+      console.error('Failed to update category:', err);
+      alert(err?.error?.message || err?.message || 'Failed to update category');
     } finally {
       setIsSubmitting(false);
     }
@@ -75,7 +107,7 @@ export default function CategoriesPage() {
       fetchCategories();
     } catch (err: any) {
       console.error('Failed to delete category:', err);
-      alert(err?.message || 'Failed to delete category');
+      alert(err?.error?.message || err?.message || 'Failed to delete category');
     }
   };
 
@@ -132,7 +164,10 @@ export default function CategoriesPage() {
                   Product Count: <strong className="text-slate-200">Dynamic</strong>
                 </span>
                 <div className="flex items-center gap-2">
-                  <button className="rounded-md border border-slate-800 bg-slate-900 px-2.5 py-1 text-slate-300 hover:text-emerald-400">
+                  <button 
+                    onClick={() => handleOpenEdit(cat)}
+                    className="rounded-md border border-slate-800 bg-slate-900 px-2.5 py-1 text-slate-300 hover:text-emerald-400"
+                  >
                     Edit
                   </button>
                   <button 
@@ -184,6 +219,55 @@ export default function CategoriesPage() {
             <button type="submit" disabled={isSubmitting} className="rounded-lg bg-emerald-500 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-50 flex items-center gap-2">
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               Save Category
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Category Modal */}
+      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit Category">
+        <form onSubmit={handleUpdateCategory} className="space-y-4 text-xs">
+          <div>
+            <label className="block text-slate-300 font-medium mb-1">Category Name</label>
+            <input
+              type="text"
+              required
+              value={editFormData.name}
+              onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-slate-300 font-medium mb-1">Description</label>
+            <textarea
+              required
+              value={editFormData.description}
+              onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none min-h-[80px]"
+            />
+          </div>
+          <div className="flex items-center gap-2 pt-2">
+            <input
+              type="checkbox"
+              id="isActive"
+              checked={editFormData.isActive}
+              onChange={(e) => setEditFormData({ ...editFormData, isActive: e.target.checked })}
+              className="rounded border-slate-800 bg-slate-950 text-emerald-500 focus:ring-emerald-500"
+            />
+            <label htmlFor="isActive" className="text-slate-300 font-medium">Category is Active</label>
+          </div>
+          <div className="pt-4 flex justify-end gap-3 border-t border-slate-800">
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => setIsEditModalOpen(false)}
+              className="rounded-lg border border-slate-800 px-4 py-2 text-slate-400 hover:bg-slate-800 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button type="submit" disabled={isSubmitting} className="rounded-lg bg-emerald-500 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-50 flex items-center gap-2">
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              Update Category
             </button>
           </div>
         </form>
