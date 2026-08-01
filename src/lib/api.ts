@@ -76,6 +76,7 @@ export const adminApi = {
 
   // Categories
   getCategories: (): Promise<any> => apiClient.get('/categories/admin/all'),
+  createCategory: (data: any): Promise<any> => apiClient.post('/categories', data),
 
   // Platform Settings
   getSettings: (): Promise<any> => apiClient.get('/admin/settings'),
@@ -88,10 +89,12 @@ export const adminApi = {
   // Products & Catalog
   getProducts: (params?: { page?: number; limit?: number; search?: string; category?: string }): Promise<any> =>
     apiClient.get('/products', { params }),
+  createProduct: (data: any): Promise<any> => apiClient.post('/products', data),
   
   // Inventory
   getInventory: (params?: { page?: number; limit?: number; lowStockOnly?: boolean }): Promise<any> =>
     apiClient.get('/inventory', { params }),
+  adjustInventory: (data: any): Promise<any> => apiClient.post('/inventory/adjust', data),
 
   // Orders
   getOrders: (params?: { page?: number; limit?: number; status?: string }): Promise<any> =>

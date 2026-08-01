@@ -16,6 +16,15 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    title: '',
+    sku: '',
+    price: '',
+    categoryId: '',
+    initialStock: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -38,6 +47,45 @@ export default function ProductsPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleCreateProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const productPayload = {
+        name: formData.title,
+        slug: formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''),
+        description: formData.title,
+        categoryId: formData.categoryId,
+        variants: [{
+          sku: formData.sku,
+          name: formData.title,
+          price: Number(formData.price)
+        }],
+        isActive: true
+      };
+      
+      const newProduct = await adminApi.createProduct(productPayload);
+      const productId = newProduct.data?._id || newProduct._id;
+      
+      if (formData.initialStock && Number(formData.initialStock) > 0) {
+        await adminApi.adjustInventory({
+          sku: formData.sku,
+          productId: productId,
+          quantityChange: Number(formData.initialStock)
+        });
+      }
+      
+      setIsAddModalOpen(false);
+      setFormData({ title: '', sku: '', price: '', categoryId: '', initialStock: '' });
+      fetchData();
+    } catch (err: any) {
+      console.error('Failed to create product:', err);
+      alert(err?.message || 'Failed to create product');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const filteredProducts = products.filter(
     (p: any) => {
@@ -177,10 +225,7 @@ export default function ProductsPage() {
       {/* Add Product Modal */}
       <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Create New Vitafoam Product">
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            setIsAddModalOpen(false);
-          }}
+          onSubmit={handleCreateProduct}
           className="space-y-4 text-xs"
         >
           <div>
@@ -188,6 +233,8 @@ export default function ProductsPage() {
             <input
               type="text"
               required
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="e.g. Vitafoam Supreme Mattress 6x6"
               className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
             />
@@ -198,6 +245,8 @@ export default function ProductsPage() {
               <input
                 type="text"
                 required
+                value={formData.sku}
+                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                 placeholder="VF-SUP-005"
                 className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
               />
@@ -207,6 +256,9 @@ export default function ProductsPage() {
               <input
                 type="number"
                 required
+                min="0"
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                 placeholder="250000"
                 className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
               />
@@ -215,7 +267,12 @@ export default function ProductsPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-slate-300 font-medium mb-1">Category</label>
-              <select className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none">
+              <select 
+                required
+                value={formData.categoryId}
+                onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+              >
                 <option value="">Select a category...</option>
                 {categories.map((cat: any) => (
                   <option key={cat._id || cat.id} value={cat._id || cat.id}>
@@ -229,6 +286,9 @@ export default function ProductsPage() {
               <input
                 type="number"
                 required
+                min="0"
+                value={formData.initialStock}
+                onChange={(e) => setFormData({ ...formData, initialStock: e.target.value })}
                 placeholder="50"
                 className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
               />
@@ -237,12 +297,14 @@ export default function ProductsPage() {
           <div className="pt-4 flex justify-end gap-3 border-t border-slate-800">
             <button
               type="button"
+              disabled={isSubmitting}
               onClick={() => setIsAddModalOpen(false)}
-              className="rounded-lg border border-slate-800 px-4 py-2 text-slate-400 hover:bg-slate-800"
+              className="rounded-lg border border-slate-800 px-4 py-2 text-slate-400 hover:bg-slate-800 disabled:opacity-50"
             >
               Cancel
             </button>
-            <button type="submit" className="rounded-lg bg-emerald-500 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-400">
+            <button type="submit" disabled={isSubmitting} className="rounded-lg bg-emerald-500 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-50 flex items-center gap-2">
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               Save Product
             </button>
           </div>
