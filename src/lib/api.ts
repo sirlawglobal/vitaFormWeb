@@ -101,6 +101,18 @@ export const adminApi = {
   getLowStock: (): Promise<any> => apiClient.get('/inventory/low-stock'),
   adjustInventory: (data: any): Promise<any> => apiClient.post('/inventory/adjust', data),
 
+  // Storage & Uploads
+  uploadFile: (file: File, folder?: string): Promise<any> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiClient.post('/storage/upload', formData, {
+      params: { folder },
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
   // Orders
   getOrders: (params?: { page?: number; limit?: number; status?: string }): Promise<any> =>
     apiClient.get('/orders', { params }),

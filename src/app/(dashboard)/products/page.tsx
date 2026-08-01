@@ -17,6 +17,8 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [editSelectedFile, setEditSelectedFile] = useState<File | null>(null);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -89,8 +91,19 @@ export default function ProductsPage() {
           name: formData.title,
           price: Number(formData.price)
         }],
-        isActive: true
+        isActive: true,
+        images: [] as { url: string; isPrimary: boolean }[]
       };
+
+      if (selectedFile) {
+        const uploadRes = await adminApi.uploadFile(selectedFile, 'products');
+        if (uploadRes.url || uploadRes.data?.url) {
+          productPayload.images.push({
+            url: uploadRes.url || uploadRes.data?.url,
+            isPrimary: true
+          });
+        }
+      }
       
       const newProduct = await adminApi.createProduct(productPayload);
       const productId = newProduct.data?._id || newProduct._id;
@@ -104,6 +117,7 @@ export default function ProductsPage() {
       
       setIsAddModalOpen(false);
       setFormData({ title: '', sku: '', price: '', categoryId: '', initialStock: '' });
+      setSelectedFile(null);
       fetchData();
     } catch (err: any) {
       console.error('Failed to create product:', err);
@@ -123,6 +137,7 @@ export default function ProductsPage() {
       categoryId: product.categoryId?._id || product.categoryId || '',
       isActive: product.isActive !== undefined ? product.isActive : true
     });
+    setEditSelectedFile(null);
     setIsEditModalOpen(true);
   };
 
@@ -138,8 +153,19 @@ export default function ProductsPage() {
           name: editFormData.title,
           price: Number(editFormData.price)
         }],
-        isActive: editFormData.isActive
+        isActive: editFormData.isActive,
+        images: undefined as any[] | undefined
       };
+
+      if (editSelectedFile) {
+        const uploadRes = await adminApi.uploadFile(editSelectedFile, 'products');
+        if (uploadRes.url || uploadRes.data?.url) {
+          payload.images = [{
+            url: uploadRes.url || uploadRes.data?.url,
+            isPrimary: true
+          }];
+        }
+      }
       
       await adminApi.updateProduct(editFormData.id, payload);
       setIsEditModalOpen(false);
@@ -257,9 +283,17 @@ export default function ProductsPage() {
                     <tr key={product._id || product.id} className="hover:bg-slate-900/50 transition-colors">
                       <td className="py-3.5 px-4 font-semibold text-slate-200">
                         <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-emerald-400">
-                            <Package className="h-4 w-4" />
-                          </div>
+                          {product.images && product.images.length > 0 ? (
+                            <img 
+                              src={product.images[0].url} 
+                              alt={displayTitle} 
+                              className="h-9 w-9 rounded-lg object-cover border border-slate-700 shadow-sm"
+                            />
+                          ) : (
+                            <div className="h-9 w-9 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-emerald-400">
+                              <Package className="h-4 w-4" />
+                            </div>
+                          )}
                           <div>
                             <span className="block">{displayTitle}</span>
                             <span className="text-[10px] text-slate-400">Updated {formatDate(product.updatedAt || product.createdAt)}</span>
@@ -376,6 +410,15 @@ export default function ProductsPage() {
               />
             </div>
           </div>
+          <div>
+            <label className="block text-slate-300 font-medium mb-1">Product Image</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2 text-slate-400 file:mr-4 file:rounded-md file:border-0 file:bg-emerald-500/10 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-emerald-400 hover:file:bg-emerald-500/20 focus:outline-none"
+            />
+          </div>
           <div className="pt-4 flex justify-end gap-3 border-t border-slate-800">
             <button
               type="button"
@@ -459,6 +502,16 @@ export default function ProductsPage() {
               />
               <label htmlFor="isProductActive" className="text-slate-300 font-medium">Product is Active</label>
             </div>
+          </div>
+          <div>
+            <label className="block text-slate-300 font-medium mb-1">Update Product Image</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setEditSelectedFile(e.target.files?.[0] || null)}
+              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2 text-slate-400 file:mr-4 file:rounded-md file:border-0 file:bg-emerald-500/10 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-emerald-400 hover:file:bg-emerald-500/20 focus:outline-none"
+            />
+            <p className="text-[10px] text-slate-500 mt-1">Leave empty to keep current image</p>
           </div>
           <div className="pt-4 flex justify-end gap-3 border-t border-slate-800">
             <button
