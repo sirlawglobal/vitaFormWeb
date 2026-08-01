@@ -68,13 +68,12 @@ export default function ProductsPage() {
       const newProduct = await adminApi.createProduct(productPayload);
       const productId = newProduct.data?._id || newProduct._id;
       
-      if (formData.initialStock && Number(formData.initialStock) > 0) {
-        await adminApi.adjustInventory({
-          sku: formData.sku,
-          productId: productId,
-          quantityChange: Number(formData.initialStock)
-        });
-      }
+      // Always initialize inventory tracking for the new product
+      await adminApi.adjustInventory({
+        sku: formData.sku,
+        productId: productId,
+        quantityChange: Number(formData.initialStock || 0)
+      });
       
       setIsAddModalOpen(false);
       setFormData({ title: '', sku: '', price: '', categoryId: '', initialStock: '' });
