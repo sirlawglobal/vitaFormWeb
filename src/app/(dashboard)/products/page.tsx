@@ -29,11 +29,29 @@ export default function ProductsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [prodData, catData]: any = await Promise.all([
+      const [prodData, catData, invData]: any = await Promise.all([
         adminApi.getProducts(),
-        adminApi.getCategories()
+        adminApi.getCategories(),
+        adminApi.getInventory()
       ]);
-      setProducts(extractDataArray(prodData));
+      const rawProducts = extractDataArray(prodData);
+      const invArray = extractDataArray(invData);
+
+      // Join inventory stock levels to the product data
+      const productsWithInventory = rawProducts.map((p: any) => {
+        const primarySku = p.variants && p.variants.length > 0 ? p.variants[0].sku : p.sku;
+        const inv = invArray.find((i: any) => 
+          i.productId?._id === (p._id || p.id) || 
+          i.productId === (p._id || p.id) ||
+          i.sku === primarySku
+        );
+        return {
+          ...p,
+          stock: inv ? inv.quantity : 0
+        };
+      });
+
+      setProducts(productsWithInventory);
       setCategories(extractDataArray(catData));
     } catch (err) {
       console.warn('[Products] Failed to fetch data:', err);
@@ -172,8 +190,8 @@ export default function ProductsPage() {
                   const displaySku = primaryVariant?.sku || product.sku || 'N/A';
                   const displayCat = product.categorySlug || product.category || 'General';
                   const displayPrice = primaryVariant?.price || product.price || 0;
-                  // Inventory is a separate service, default to 0 for now until inventory is integrated
-                  const stock = product.stockQuantity ?? product.stock ?? 0;
+                  // Map the joined stock value
+                  const stock = product.stock ?? 0;
                   const isActive = product.isActive !== undefined ? product.isActive : true;
 
                   return (
