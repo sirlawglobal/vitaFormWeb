@@ -90,12 +90,17 @@ export default function PromotionsPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await adminApi.createPromotion(formData);
+      const payload: any = { ...formData };
+      if (payload.startDate) payload.startDate = new Date(payload.startDate).toISOString();
+      if (payload.expiresAt) payload.expiresAt = new Date(payload.expiresAt).toISOString();
+      
+      await adminApi.createPromotion(payload);
       setIsAddModalOpen(false);
       fetchPromotions();
     } catch (err: any) {
       console.error('Failed to create promotion:', err);
-      alert(err?.response?.data?.message || err?.error?.message || err?.message || 'Failed to create promotion');
+      const errorMsg = err?.message || err?.error?.message;
+      alert(Array.isArray(errorMsg) ? errorMsg.join('\\n') : errorMsg || 'Failed to create promotion');
     } finally {
       setIsSubmitting(false);
     }
@@ -106,12 +111,17 @@ export default function PromotionsPage() {
     if (!selectedPromoId) return;
     setIsSubmitting(true);
     try {
-      await adminApi.updatePromotion(selectedPromoId, formData);
+      const payload: any = { ...formData };
+      if (payload.startDate) payload.startDate = new Date(payload.startDate).toISOString();
+      if (payload.expiresAt) payload.expiresAt = new Date(payload.expiresAt).toISOString();
+
+      await adminApi.updatePromotion(selectedPromoId, payload);
       setIsEditModalOpen(false);
       fetchPromotions();
     } catch (err: any) {
       console.error('Failed to update promotion:', err);
-      alert(err?.response?.data?.message || err?.error?.message || err?.message || 'Failed to update promotion');
+      const errorMsg = err?.message || err?.error?.message;
+      alert(Array.isArray(errorMsg) ? errorMsg.join('\\n') : errorMsg || 'Failed to update promotion');
     } finally {
       setIsSubmitting(false);
     }
