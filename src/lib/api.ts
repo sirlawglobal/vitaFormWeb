@@ -68,6 +68,8 @@ export const adminApi = {
     apiClient.patch(`/admin/users/${id}/role`, { role }),
   resetUserPassword: (id: string, password: string): Promise<any> =>
     apiClient.patch(`/admin/users/${id}/reset-password`, { password }),
+  deleteUser: (id: string): Promise<any> =>
+    apiClient.delete(`/admin/users/${id}`),
 
   // Banners
   getBanners: (): Promise<any> => apiClient.get('/admin/banners'),

@@ -26,6 +26,9 @@ export default function UsersPage() {
   const [changeRoleUserId, setChangeRoleUserId] = useState<string | null>(null);
   const [changeRoleValue, setChangeRoleValue] = useState('customer');
 
+  const [isDeleteUserModalOpen, setIsDeleteUserModalOpen] = useState(false);
+  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+
   const fetchUsers = async () => {
     setLoading(true);
     try {
@@ -98,6 +101,23 @@ export default function UsersPage() {
     } catch (err: any) {
       console.error('Failed to change role:', err);
       alert(err?.error?.message || err?.message || 'Failed to change role');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteUserSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!deleteUserId) return;
+    setIsSubmitting(true);
+    try {
+      await adminApi.deleteUser(deleteUserId);
+      setIsDeleteUserModalOpen(false);
+      setDeleteUserId(null);
+      fetchUsers();
+    } catch (err: any) {
+      console.error('Failed to delete user:', err);
+      alert(err?.error?.message || err?.message || 'Failed to delete user');
     } finally {
       setIsSubmitting(false);
     }
@@ -234,6 +254,15 @@ export default function UsersPage() {
                         className="rounded-md border border-slate-800 bg-slate-900 px-2.5 py-1 text-xs font-medium text-emerald-400 hover:bg-slate-800"
                       >
                         Change Role
+                      </button>
+                      <button
+                        onClick={() => {
+                          setDeleteUserId(user.id || (user as any)._id);
+                          setIsDeleteUserModalOpen(true);
+                        }}
+                        className="rounded-md border border-slate-800 bg-slate-900 px-2.5 py-1 text-xs font-medium text-rose-400 hover:bg-slate-800"
+                      >
+                        Delete
                       </button>
                     </div>
                   </td>
@@ -396,6 +425,29 @@ export default function UsersPage() {
             <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-50">
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               Update Role
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Delete User Modal */}
+      <Modal isOpen={isDeleteUserModalOpen} onClose={() => setIsDeleteUserModalOpen(false)} title="Confirm Deletion">
+        <form onSubmit={handleDeleteUserSubmit} className="space-y-4 text-xs">
+          <div>
+            <p className="text-slate-300">Are you sure you want to permanently delete this user? This action cannot be undone.</p>
+          </div>
+          <div className="pt-4 flex justify-end gap-3 border-t border-slate-800">
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => setIsDeleteUserModalOpen(false)}
+              className="rounded-lg border border-slate-800 px-4 py-2 text-slate-400 hover:bg-slate-800 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 rounded-lg bg-rose-500 px-4 py-2 font-semibold text-white hover:bg-rose-400 disabled:opacity-50">
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              Delete User
             </button>
           </div>
         </form>
