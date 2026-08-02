@@ -15,6 +15,8 @@ export default function UsersPage() {
   const [isProvisionModalOpen, setIsProvisionModalOpen] = useState(false);
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({ name: '', email: '', role: 'admin' });
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -33,6 +35,26 @@ export default function UsersPage() {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await adminApi.createUser({
+        name: formData.name,
+        email: formData.email,
+        role: formData.role
+      });
+      setIsProvisionModalOpen(false);
+      setFormData({ name: '', email: '', role: 'admin' });
+      fetchUsers();
+    } catch (err: any) {
+      console.error('Failed to provision user:', err);
+      alert(err?.error?.message || err?.message || 'Failed to provision user');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const filteredUsers = users.filter((u) => {
     const fullName = `${(u as any).firstName || ''} ${(u as any).lastName || ''}`.trim();
@@ -159,18 +181,14 @@ export default function UsersPage() {
 
       {/* Provision Staff Modal */}
       <Modal isOpen={isProvisionModalOpen} onClose={() => setIsProvisionModalOpen(false)} title="Provision Staff User Account">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            setIsProvisionModalOpen(false);
-          }}
-          className="space-y-4 text-xs"
-        >
+        <form onSubmit={handleCreateUser} className="space-y-4 text-xs">
           <div>
             <label className="block text-slate-300 font-medium mb-1">Full Name</label>
             <input
               type="text"
               required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="e.g. Oluwaseun Adeleke"
               className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
             />
@@ -180,27 +198,36 @@ export default function UsersPage() {
             <input
               type="email"
               required
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               placeholder="o.adeleke@vitafoam.com"
               className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
             />
           </div>
           <div>
             <label className="block text-slate-300 font-medium mb-1">Assigned Security Role</label>
-            <select className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none">
+            <select 
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+            >
               <option value="admin">Administrator (Full System Access)</option>
               <option value="support">Support Agent (Orders & Support Chat)</option>
               <option value="dealer">Authorized Dealer Representative</option>
+              <option value="customer">Customer</option>
             </select>
           </div>
           <div className="pt-4 flex justify-end gap-3 border-t border-slate-800">
             <button
               type="button"
+              disabled={isSubmitting}
               onClick={() => setIsProvisionModalOpen(false)}
-              className="rounded-lg border border-slate-800 px-4 py-2 text-slate-400 hover:bg-slate-800"
+              className="rounded-lg border border-slate-800 px-4 py-2 text-slate-400 hover:bg-slate-800 disabled:opacity-50"
             >
               Cancel
             </button>
-            <button type="submit" className="rounded-lg bg-emerald-500 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-400">
+            <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-50">
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               Provision Account
             </button>
           </div>
