@@ -62,7 +62,7 @@ export const adminApi = {
   // Users & Staff
   getUsers: (params?: { page?: number; limit?: number; role?: string; search?: string; isActive?: boolean }): Promise<any> =>
     apiClient.get('/admin/users', { params }),
-  createUser: (data: { email: string; name: string; role: string; password?: string }): Promise<any> =>
+  createUser: (data: { email: string; firstName: string; lastName: string; phone: string; role: string; password?: string }): Promise<any> =>
     apiClient.post('/admin/users', data),
   updateUserRole: (id: string, role: string): Promise<any> =>
     apiClient.patch(`/admin/users/${id}/role`, { role }),
