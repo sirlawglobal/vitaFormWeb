@@ -145,14 +145,14 @@ export const adminApi = {
   // Sleep Quiz
   sleepQuiz: {
     // Rules
-    getRules: () => apiClient.get('/admin/rules'),
-    createRule: (data: any) => apiClient.post('/admin/rules', data),
-    updateRule: (id: string, data: any) => apiClient.patch(`/admin/rules/${id}`, data),
-    deleteRule: (id: string) => apiClient.delete(`/admin/rules/${id}`),
+    getRules: () => apiClient.get('/sleep-quiz/admin/rules'),
+    createRule: (data: any) => apiClient.post('/sleep-quiz/admin/rules', data),
+    updateRule: (id: string, data: any) => apiClient.patch(`/sleep-quiz/admin/rules/${id}`, data),
+    deleteRule: (id: string) => apiClient.delete(`/sleep-quiz/admin/rules/${id}`),
     // Questions
     getQuestions: () => apiClient.get('/sleep-quiz/questions'),
-    createQuestion: (data: any) => apiClient.post('/admin/questions', data),
-    updateQuestion: (id: string, data: any) => apiClient.patch(`/admin/questions/${id}`, data),
-    deleteQuestion: (id: string) => apiClient.delete(`/admin/questions/${id}`),
+    createQuestion: (data: any) => apiClient.post('/sleep-quiz/admin/questions', data),
+    updateQuestion: (id: string, data: any) => apiClient.patch(`/sleep-quiz/admin/questions/${id}`, data),
+    deleteQuestion: (id: string) => apiClient.delete(`/sleep-quiz/admin/questions/${id}`),
   }
 };
