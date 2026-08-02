@@ -1,27 +1,51 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Settings, ShieldAlert, Save, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { PlatformSettings } from '@/types';
+import { adminApi } from '@/lib/api';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<PlatformSettings>({
-    siteName: 'Vitafoam Mobile Commerce Platform',
-    supportEmail: 'support@vitafoam.com.ng',
+    siteName: '',
+    supportEmail: '',
     currency: 'NGN',
     maintenanceMode: false,
-    bannerAnnouncement: 'Welcome to Vitafoam Official Store. Free delivery on orders over ₦100,000.',
+    bannerAnnouncement: '',
     enableGuestCheckout: true,
   });
 
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await adminApi.getSettings();
+        if (response && response.data) {
+          setSettings(response.data);
+        }
+      } catch (err) {
+        console.error('Failed to load settings', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+    try {
+      await adminApi.updateSettings(settings);
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+    } catch (err) {
+      console.error('Failed to save settings', err);
+      alert('Failed to save settings');
+    }
   };
 
   return (

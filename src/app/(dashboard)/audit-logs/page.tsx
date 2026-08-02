@@ -87,18 +87,20 @@ export default function AuditLogsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 text-slate-300">
-              {logs.map((log) => (
-                <tr key={log.id} className="hover:bg-slate-900/50 transition-colors">
-                  <td className="py-3.5 px-4 text-slate-400 text-[11px] whitespace-nowrap">{formatDate(log.timestamp)}</td>
-                  <td className="py-3.5 px-4 font-semibold text-emerald-400">{log.adminEmail || (log as any).userEmail || 'System'}</td>
+              {logs.map((log: any) => (
+                <tr key={log._id || log.id} className="hover:bg-slate-900/50 transition-colors">
+                  <td className="py-3.5 px-4 text-slate-400 text-[11px] whitespace-nowrap">{formatDate(log.createdAt || log.timestamp)}</td>
+                  <td className="py-3.5 px-4 font-semibold text-emerald-400">{log.adminEmail || log.userEmail || 'System'}</td>
                   <td className="py-3.5 px-4">
                     <span className="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-200 border border-slate-700">
                       {log.action}
                     </span>
                   </td>
-                  <td className="py-3.5 px-4 text-slate-200 font-semibold">{log.resource || (log as any).entity || 'N/A'}</td>
-                  <td className="py-3.5 px-4 text-slate-400 text-[11px]">{log.details || JSON.stringify((log as any).meta || '')}</td>
-                  <td className="py-3.5 px-4 text-right text-slate-500 text-[11px]">{log.ipAddress || (log as any).ip || '127.0.0.1'}</td>
+                  <td className="py-3.5 px-4 text-slate-200 font-semibold">{log.entityType || log.resource || log.entity || 'N/A'}</td>
+                  <td className="py-3.5 px-4 text-slate-400 text-[11px] max-w-[200px] truncate" title={JSON.stringify(log.changes || log.details || log.meta || '')}>
+                    {JSON.stringify(log.changes || log.details || log.meta || '')}
+                  </td>
+                  <td className="py-3.5 px-4 text-right text-slate-500 text-[11px]">{log.ipAddress || log.ip || '127.0.0.1'}</td>
                 </tr>
               ))}
             </tbody>
