@@ -96,12 +96,26 @@ export default function BannersPage() {
     scheduledEndDate: '',
   });
 
+  const [page, setPage] = useState(1);
+  const [limit] = useState(20);
+  const [totalBanners, setTotalBanners] = useState(0);
+  const [search, setSearch] = useState('');
+  const [bannerTypeFilter, setBannerTypeFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
   const fetchBanners = async () => {
     setLoading(true);
     try {
-      const data: any = await adminApi.getBanners();
-      const liveBanners = extractDataArray(data);
+      const params: any = { page, limit };
+      if (search) params.search = search;
+      if (bannerTypeFilter) params.bannerType = bannerTypeFilter;
+      if (statusFilter === 'active') params.isActive = true;
+      if (statusFilter === 'inactive') params.isActive = false;
+
+      const response: any = await adminApi.getBanners(params);
+      const liveBanners = extractDataArray(response);
       setBanners(liveBanners);
+      setTotalBanners(response?.data?.total || response?.total || 0);
     } catch (err) {
       console.warn('[Banners] Failed to fetch banners:', err);
       setBanners([]);
@@ -109,6 +123,10 @@ export default function BannersPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, bannerTypeFilter, statusFilter]);
 
   const handleCreateBanner = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,8 +221,11 @@ export default function BannersPage() {
   };
 
   useEffect(() => {
-    fetchBanners();
-  }, []);
+    const timer = setTimeout(() => {
+      fetchBanners();
+    }, 500); // Debounce API calls slightly for search
+    return () => clearTimeout(timer);
+  }, [page, search, bannerTypeFilter, statusFilter]);
 
   return (
     <div className="space-y-6">
@@ -226,6 +247,38 @@ export default function BannersPage() {
           <Plus className="h-4 w-4" />
           <span>Add New Banner</span>
         </button>
+      </div>
+
+      {/* Filters and Search */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+        <input 
+          type="text" 
+          placeholder="Search banners by title or subtitle..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full md:w-80 rounded-lg border border-slate-700 bg-slate-950 p-2 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none"
+        />
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <select 
+            value={bannerTypeFilter}
+            onChange={(e) => setBannerTypeFilter(e.target.value)}
+            className="w-full md:w-40 rounded-lg border border-slate-700 bg-slate-950 p-2 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none"
+          >
+            <option value="">All Types</option>
+            <option value="custom">Custom Overlay</option>
+            <option value="image_only">Image Only</option>
+          </select>
+
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full md:w-40 rounded-lg border border-slate-700 bg-slate-950 p-2 text-sm text-slate-200 focus:border-emerald-500 focus:outline-none"
+          >
+            <option value="">All Statuses</option>
+            <option value="active">Live / Scheduled</option>
+            <option value="inactive">Draft / Inactive</option>
+          </select>
+        </div>
       </div>
 
       {/* Banners Visual Card Grid */}
@@ -261,6 +314,31 @@ export default function BannersPage() {
               />
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalBanners > limit && (
+        <div className="flex items-center justify-between border-t border-slate-800 pt-6">
+          <p className="text-xs text-slate-400">
+            Showing <span className="font-medium text-slate-200">{(page - 1) * limit + 1}</span> to <span className="font-medium text-slate-200">{Math.min(page * limit, totalBanners)}</span> of <span className="font-medium text-slate-200">{totalBanners}</span> banners
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1 || loading}
+              className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page * limit >= totalBanners || loading}
+              className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
 

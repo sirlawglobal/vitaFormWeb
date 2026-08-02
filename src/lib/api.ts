@@ -72,7 +72,8 @@ export const adminApi = {
     apiClient.delete(`/admin/users/${id}`),
 
   // Banners
-  getBanners: (): Promise<any> => apiClient.get('/admin/banners'),
+  getBanners: (params?: { page?: number; limit?: number; search?: string; bannerType?: string; isActive?: boolean }): Promise<any> => 
+    apiClient.get('/admin/banners', { params }),
   getBannerById: (id: string): Promise<any> => apiClient.get(`/admin/banners/${id}`),
   createBanner: (data: any): Promise<any> => apiClient.post('/admin/banners', data),
   updateBanner: (id: string, data: any): Promise<any> => apiClient.patch(`/admin/banners/${id}`, data),
