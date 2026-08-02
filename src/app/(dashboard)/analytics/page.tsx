@@ -125,54 +125,6 @@ export default function AnalyticsPage() {
               )}
             </div>
           </Card>
-
-          {/* Abandoned Carts Table */}
-          <Card className="p-0 overflow-hidden">
-            <div className="p-4 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
-              <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-                <ShoppingCart className="w-4 h-4 text-rose-400" />
-                Abandoned Carts (Hot Leads)
-              </h3>
-              <Badge variant="outline" className="border-rose-500/30 text-rose-400 bg-rose-500/10">Follow up required</Badge>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-950/50 text-slate-400 uppercase tracking-wider text-[10px] font-bold">
-                  <tr>
-                    <th className="py-3 px-4">Last Active</th>
-                    <th className="py-3 px-4">User</th>
-                    <th className="py-3 px-4">Cart Total</th>
-                    <th className="py-3 px-4">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60 text-slate-300">
-                  {isLoading ? (
-                    <tr><td colSpan={4} className="py-4 text-center text-slate-500">Loading...</td></tr>
-                  ) : abandonedCarts.length > 0 ? (
-                    abandonedCarts.map((cart, idx) => (
-                      <tr key={idx} className="hover:bg-slate-900/50 transition-colors">
-                        <td className="py-3 px-4 whitespace-nowrap">{formatDate(cart.updatedAt)}</td>
-                        <td className="py-3 px-4">
-                          <div className="font-semibold text-emerald-400">{cart.email || 'Guest User'}</div>
-                          {cart.phone && <div className="text-[10px] text-slate-500">{cart.phone}</div>}
-                        </td>
-                        <td className="py-3 px-4 font-mono font-semibold">₦{(cart.total || 0).toLocaleString()}</td>
-                        <td className="py-3 px-4">
-                          {cart.email ? (
-                            <a href={`mailto:${cart.email}?subject=Did you forget something in your Vitafoam cart?`} className="text-emerald-400 hover:text-emerald-300 underline font-semibold">Email User</a>
-                          ) : (
-                            <span className="text-slate-500">No contact info</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr><td colSpan={4} className="py-8 text-center text-slate-500">No abandoned carts found. Great job!</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </Card>
         </div>
 
         {/* Funnel Widget */}

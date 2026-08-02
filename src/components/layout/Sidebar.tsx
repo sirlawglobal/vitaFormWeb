@@ -11,6 +11,7 @@ import {
   Tags,
   Boxes,
   ShoppingBag,
+  ShoppingCart,
   CreditCard,
   Users,
   Building2,
@@ -55,6 +56,7 @@ const navigationGroups: NavGroup[] = [
     section: 'SALES',
     items: [
       { name: 'Orders', href: '/orders', icon: ShoppingBag, badge: '12' },
+      { name: 'Abandoned Carts', href: '/abandoned-carts', icon: ShoppingCart },
       { name: 'Payments', href: '/payments', icon: CreditCard },
     ],
   },
