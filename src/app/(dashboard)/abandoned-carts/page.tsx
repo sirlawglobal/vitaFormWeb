@@ -68,19 +68,19 @@ export default function AbandonedCartsPage() {
               ) : abandonedCarts.length > 0 ? (
                 abandonedCarts.map((cart, idx) => (
                   <tr key={idx} className="hover:bg-slate-900/50 transition-colors">
-                    <td className="py-3 px-4 whitespace-nowrap text-slate-400">{formatDate(cart.updatedAt)}</td>
+                    <td className="py-3 px-4 whitespace-nowrap text-slate-400">{formatDate(cart.lastActivityAt || cart.updatedAt)}</td>
                     <td className="py-3 px-4">
-                      <div className="font-semibold text-emerald-400">{cart.email || 'Guest User'}</div>
-                      {cart.phone && <div className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5"><PhoneCall className="w-3 h-3" /> {cart.phone}</div>}
+                      <div className="font-semibold text-emerald-400">{cart.userEmail || cart.email || 'Guest User'}</div>
+                      {(cart.userPhone || cart.phone) && <div className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5"><PhoneCall className="w-3 h-3" /> {cart.userPhone || cart.phone}</div>}
                     </td>
                     <td className="py-3 px-4">
-                      <div className="font-mono font-bold text-slate-200">₦{(cart.total || 0).toLocaleString()}</div>
-                      <div className="text-[10px] text-slate-500">{cart.itemCount || 0} items</div>
+                      <div className="font-mono font-bold text-slate-200">₦{(cart.metadata?.total || cart.total || 0).toLocaleString()}</div>
+                      <div className="text-[10px] text-slate-500">{cart.metadata?.itemCount || cart.itemCount || 0} items</div>
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
-                        {cart.email ? (
-                          <a href={`mailto:${cart.email}?subject=Did you forget something in your Vitafoam cart?`} className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 transition-colors font-semibold bg-emerald-500/10 px-2 py-1 rounded">
+                        {(cart.userEmail || cart.email) ? (
+                          <a href={`mailto:${cart.userEmail || cart.email}?subject=Did you forget something in your Vitafoam cart?`} className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 transition-colors font-semibold bg-emerald-500/10 px-2 py-1 rounded">
                             <Mail className="w-3 h-3" />
                             Email
                           </a>

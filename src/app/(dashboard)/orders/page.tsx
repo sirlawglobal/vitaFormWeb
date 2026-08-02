@@ -69,20 +69,28 @@ export default function OrdersPage() {
                   </td>
                 </tr>
               ) : (
-                orders.map((order) => (
-                  <tr key={order.id || (order as any)._id} className="hover:bg-slate-900/50 transition-colors">
-                    <td className="py-3.5 px-4 font-mono font-bold text-emerald-400">{order.orderNumber || (order as any).id || 'N/A'}</td>
+                orders.map((order: any) => (
+                  <tr key={order._id} className="hover:bg-slate-900/50 transition-colors">
+                    <td className="py-3.5 px-4 font-mono font-bold text-emerald-400">{order.orderNumber}</td>
                     <td className="py-3.5 px-4">
-                      <span className="block font-semibold text-slate-200">{order.customerName || (order as any).user?.name || 'Customer'}</span>
-                      <span className="text-[10px] text-slate-500">{order.customerEmail || (order as any).user?.email || ''}</span>
+                      <span className="block font-semibold text-slate-200">
+                        {order.userId ? `${order.userId.firstName || ''} ${order.userId.lastName || ''}` : 'Customer'}
+                      </span>
+                      <span className="text-[10px] text-slate-500">
+                        {order.userId?.email || order.shippingAddress?.email || ''}
+                      </span>
                     </td>
-                    <td className="py-3.5 px-4 text-slate-400 font-mono">{order.itemCount ?? (order as any).items?.length ?? 1} items</td>
-                    <td className="py-3.5 px-4 font-bold text-slate-100">{formatCurrency(order.totalAmount || (order as any).totalPrice || 0)}</td>
+                    <td className="py-3.5 px-4 text-slate-400 font-mono">{order.items?.length || 0} items</td>
+                    <td className="py-3.5 px-4 font-bold text-slate-100">{formatCurrency(order.paymentSummary?.totalAmount || 0)}</td>
                     <td className="py-3.5 px-4">
-                      <Badge status={order.paymentStatus || 'paid'}>{order.paymentStatus || 'paid'}</Badge>
+                      <Badge status={order.paymentSummary?.paymentStatus || 'PENDING'}>
+                        {order.paymentSummary?.paymentStatus || 'PENDING'}
+                      </Badge>
                     </td>
                     <td className="py-3.5 px-4">
-                      <Badge status={order.status || 'pending'}>{order.status || 'pending'}</Badge>
+                      <Badge status={order.orderStatus || 'PENDING'}>
+                        {order.orderStatus || 'PENDING'}
+                      </Badge>
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <button className="rounded-md border border-slate-800 bg-slate-900 p-1.5 text-slate-400 hover:bg-slate-800 hover:text-emerald-400">

@@ -136,7 +136,7 @@ export const adminApi = {
 
   // Orders
   getOrders: (params?: { page?: number; limit?: number; status?: string }): Promise<any> =>
-    apiClient.get('/orders', { params }),
+    apiClient.get('/orders/admin/all', { params }),
 
   // Dealers
   getDealers: (params?: { page?: number; limit?: number }): Promise<any> =>
@@ -162,5 +162,19 @@ export const adminApi = {
     getFunnelMetrics: () => apiClient.get('/analytics/funnel'),
     getAbandonedCarts: (limit?: number) => apiClient.get('/analytics/abandoned-carts', { params: { limit } }),
     getUserActivity: (userId: string, limit?: number) => apiClient.get(`/analytics/users/${userId}/activity`, { params: { limit } }),
+  },
+
+  // Reviews
+  reviews: {
+    getPendingReviews: (page: number = 1, limit: number = 20) => apiClient.get('/admin/reviews', { params: { page, limit } }),
+    approveReview: (id: string, adminNote?: string) => apiClient.patch(`/admin/reviews/${id}/approve`, { adminNote }),
+    rejectReview: (id: string, adminNote?: string) => apiClient.patch(`/admin/reviews/${id}/reject`, { adminNote }),
+  },
+
+  // Warranty
+  warranty: {
+    getPendingClaims: (page: number = 1, limit: number = 20) => apiClient.get('/admin/warranty/claims', { params: { page, limit } }),
+    moderateClaim: (warrantyId: string, claimId: string, status: string, resolution?: string) => 
+      apiClient.patch(`/admin/warranty/${warrantyId}/claims/${claimId}`, { status, resolution }),
   }
 };
