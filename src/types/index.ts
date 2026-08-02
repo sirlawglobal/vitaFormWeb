@@ -112,10 +112,13 @@ export interface SystemAuditLog {
 }
 
 export interface PlatformSettings {
-  siteName: string;
-  supportEmail: string;
-  currency: string;
+  appName: string;
+  contactEmail: string;
+  supportPhone?: string;
+  privacyPolicyUrl?: string;
+  termsOfServiceUrl?: string;
+  defaultCurrency?: string;
+  defaultLanguage?: string;
   maintenanceMode: boolean;
-  bannerAnnouncement?: string;
-  enableGuestCheckout: boolean;
+  metadata?: Record<string, any>;
 }

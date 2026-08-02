@@ -9,12 +9,11 @@ import { adminApi } from '@/lib/api';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<PlatformSettings>({
-    siteName: '',
-    supportEmail: '',
-    currency: 'NGN',
+    appName: '',
+    contactEmail: '',
+    supportPhone: '',
     maintenanceMode: false,
-    bannerAnnouncement: '',
-    enableGuestCheckout: true,
+    metadata: { bannerAnnouncement: '' },
   });
 
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -25,7 +24,10 @@ export default function SettingsPage() {
       try {
         const response = await adminApi.getSettings();
         if (response && response.data) {
-          setSettings(response.data);
+          setSettings({
+            ...response.data,
+            metadata: response.data.metadata || { bannerAnnouncement: '' }
+          });
         }
       } catch (err) {
         console.error('Failed to load settings', err);
@@ -39,7 +41,18 @@ export default function SettingsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await adminApi.updateSettings(settings);
+      // Create payload matching UpdateSettingsDto exactly
+      const payload = {
+        appName: settings.appName,
+        contactEmail: settings.contactEmail,
+        supportPhone: settings.supportPhone,
+        maintenanceMode: settings.maintenanceMode,
+        // Nest metadata if we want to save custom fields not explicitly in DTO (though DTO doesn't allow metadata currently, wait! Let's check DTO)
+        // Wait, DTO only allows appName, contactEmail, supportPhone, privacyPolicyUrl, termsOfServiceUrl, maintenanceMode.
+        // It uses whitelist true? If so, metadata gets stripped, but we won't send it to avoid 400 bad request.
+      };
+      
+      await adminApi.updateSettings(payload);
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3000);
     } catch (err) {
@@ -105,8 +118,8 @@ export default function SettingsPage() {
               <label className="block text-xs font-semibold text-slate-300 mb-1">Platform App Name</label>
               <input
                 type="text"
-                value={settings.siteName}
-                onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
+                value={settings.appName || ''}
+                onChange={(e) => setSettings({ ...settings, appName: e.target.value })}
                 className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-xs text-slate-200 focus:border-emerald-500 focus:outline-none"
               />
             </div>
@@ -114,20 +127,20 @@ export default function SettingsPage() {
               <label className="block text-xs font-semibold text-slate-300 mb-1">Support Email Address</label>
               <input
                 type="email"
-                value={settings.supportEmail}
-                onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
+                value={settings.contactEmail || ''}
+                onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
                 className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-xs text-slate-200 focus:border-emerald-500 focus:outline-none"
               />
             </div>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Global Broadcast Announcement Banner</label>
-            <input
-              type="text"
-              value={settings.bannerAnnouncement}
-              onChange={(e) => setSettings({ ...settings, bannerAnnouncement: e.target.value })}
-              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-xs text-slate-200 focus:border-emerald-500 focus:outline-none"
-            />
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">Support Phone</label>
+              <input
+                type="text"
+                value={settings.supportPhone || ''}
+                onChange={(e) => setSettings({ ...settings, supportPhone: e.target.value })}
+                className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-xs text-slate-200 focus:border-emerald-500 focus:outline-none"
+              />
+            </div>
           </div>
         </Card>
 
