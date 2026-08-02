@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
-import { Users, UserPlus, Search, Shield, Filter, Mail, Phone, Loader2 } from 'lucide-react';
+import { Users, UserPlus, Search, Shield, Filter, Mail, Phone, Loader2, MoreVertical } from 'lucide-react';
 import { formatDate, extractDataArray } from '@/lib/utils';
 import { UserAccount } from '@/types';
 import { adminApi } from '@/lib/api';
@@ -28,6 +28,8 @@ export default function UsersPage() {
 
   const [isDeleteUserModalOpen, setIsDeleteUserModalOpen] = useState(false);
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -181,7 +183,7 @@ export default function UsersPage() {
                 <th className="py-3.5 px-4">System Role</th>
                 <th className="py-3.5 px-4">Status</th>
                 <th className="py-3.5 px-4">Provisioned Date</th>
-                <th className="py-3.5 px-4 text-right">RBAC Role</th>
+                <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 text-slate-300">
@@ -233,38 +235,56 @@ export default function UsersPage() {
                     </Badge>
                   </td>
                   <td className="py-3.5 px-4 text-slate-400">{formatDate(user.createdAt)}</td>
-                  <td className="py-3.5 px-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => {
-                          setResetUserId(user.id || (user as any)._id);
-                          setResetPasswordValue('');
-                          setIsResetPasswordModalOpen(true);
-                        }}
-                        className="rounded-md border border-slate-800 bg-slate-900 px-2.5 py-1 text-xs font-medium text-amber-400 hover:bg-slate-800"
-                      >
-                        Reset Password
-                      </button>
-                      <button
-                        onClick={() => {
-                          setChangeRoleUserId(user.id || (user as any)._id);
-                          setChangeRoleValue(user.role);
-                          setIsChangeRoleModalOpen(true);
-                        }}
-                        className="rounded-md border border-slate-800 bg-slate-900 px-2.5 py-1 text-xs font-medium text-emerald-400 hover:bg-slate-800"
-                      >
-                        Change Role
-                      </button>
-                      <button
-                        onClick={() => {
-                          setDeleteUserId(user.id || (user as any)._id);
-                          setIsDeleteUserModalOpen(true);
-                        }}
-                        className="rounded-md border border-slate-800 bg-slate-900 px-2.5 py-1 text-xs font-medium text-rose-400 hover:bg-slate-800"
-                      >
-                        Delete
-                      </button>
-                    </div>
+                  <td className="py-3.5 px-4 text-right relative">
+                    <button
+                      onClick={() => setOpenDropdownId(openDropdownId === (user.id || (user as any)._id) ? null : (user.id || (user as any)._id))}
+                      className="p-1.5 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors inline-flex items-center justify-center"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                    
+                    {openDropdownId === (user.id || (user as any)._id) && (
+                      <>
+                        {/* Overlay to close dropdown when clicking outside */}
+                        <div className="fixed inset-0 z-40" onClick={() => setOpenDropdownId(null)} />
+                        
+                        <div className="absolute right-8 top-10 z-50 w-40 rounded-lg border border-slate-700 bg-slate-900 shadow-xl overflow-hidden py-1">
+                          <button
+                            onClick={() => {
+                              setOpenDropdownId(null);
+                              setResetUserId(user.id || (user as any)._id);
+                              setResetPasswordValue('');
+                              setIsResetPasswordModalOpen(true);
+                            }}
+                            className="w-full text-left px-4 py-2 text-xs font-medium text-amber-400 hover:bg-slate-800 transition-colors"
+                          >
+                            Reset Password
+                          </button>
+                          <button
+                            onClick={() => {
+                              setOpenDropdownId(null);
+                              setChangeRoleUserId(user.id || (user as any)._id);
+                              setChangeRoleValue(user.role);
+                              setIsChangeRoleModalOpen(true);
+                            }}
+                            className="w-full text-left px-4 py-2 text-xs font-medium text-emerald-400 hover:bg-slate-800 transition-colors"
+                          >
+                            Change Role
+                          </button>
+                          <div className="h-px bg-slate-800 my-1" />
+                          <button
+                            onClick={() => {
+                              setOpenDropdownId(null);
+                              setDeleteUserId(user.id || (user as any)._id);
+                              setIsDeleteUserModalOpen(true);
+                            }}
+                            className="w-full text-left px-4 py-2 text-xs font-medium text-rose-400 hover:bg-slate-800 transition-colors"
+                          >
+                            Delete User
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))
