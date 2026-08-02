@@ -27,6 +27,7 @@ import {
   Settings,
   ChevronRight,
   ShieldAlert,
+  Bell,
 } from 'lucide-react';
 
 interface NavGroup {
@@ -74,6 +75,7 @@ const navigationGroups: NavGroup[] = [
       { name: 'Promotions', href: '/promotions', icon: Ticket },
       { name: 'Articles', href: '/articles', icon: FileText },
       { name: 'Sleep Quiz', href: '/sleep-quiz', icon: HelpCircle },
+      { name: 'Notifications', href: '/notifications', icon: Bell },
     ],
   },
   {

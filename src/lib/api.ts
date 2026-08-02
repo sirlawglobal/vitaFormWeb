@@ -142,6 +142,10 @@ export const adminApi = {
   getDealers: (params?: { page?: number; limit?: number }): Promise<any> =>
     apiClient.get('/dealers', { params }),
 
+  // Notifications
+  broadcastNotification: (data: { title: string; body: string; type?: string }): Promise<any> =>
+    apiClient.post('/api/v1/notifications/admin/broadcast', data),
+
   // Sleep Quiz
   sleepQuiz: {
     // Rules
