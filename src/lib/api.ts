@@ -111,11 +111,7 @@ export const adminApi = {
     formData.append('file', file);
     if (folder) formData.append('folder', folder);
     
-    return apiClient.post('/storage/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    return apiClient.post('/storage/upload', formData);
   },
 
   // Orders

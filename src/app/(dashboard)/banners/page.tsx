@@ -30,18 +30,29 @@ const BannerPreviewCard = ({ banner, actions }: { banner: Partial<PromoBanner>; 
             No Image Selected
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent p-4 flex flex-col justify-end">
-          <div className="flex items-center justify-between">
+        {banner.bannerType !== 'image_only' ? (
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent p-4 flex flex-col justify-end">
+            <div className="flex items-center justify-between">
+              <Badge status={statusBadge === 'Live' ? 'active' : statusBadge === 'Scheduled' ? 'warning' : 'inactive'}>
+                {statusBadge}
+              </Badge>
+              <span className="text-[10px] font-mono font-bold bg-slate-900/90 text-emerald-400 px-2 py-0.5 rounded border border-slate-700">
+                Order #{banner.displayOrder || 1}
+              </span>
+            </div>
+            <h3 className="text-base font-bold text-slate-100 mt-2">{banner.title || 'Banner Title'}</h3>
+            <p className="text-xs text-slate-300 line-clamp-1">{banner.subtitle || 'Banner Subtitle'}</p>
+          </div>
+        ) : (
+          <div className="absolute top-0 left-0 right-0 p-3 flex items-start justify-between">
             <Badge status={statusBadge === 'Live' ? 'active' : statusBadge === 'Scheduled' ? 'warning' : 'inactive'}>
               {statusBadge}
             </Badge>
-            <span className="text-[10px] font-mono font-bold bg-slate-900/90 text-emerald-400 px-2 py-0.5 rounded border border-slate-700">
+            <span className="text-[10px] font-mono font-bold bg-slate-900/90 text-emerald-400 px-2 py-0.5 rounded border border-slate-700 shadow-sm">
               Order #{banner.displayOrder || 1}
             </span>
           </div>
-          <h3 className="text-base font-bold text-slate-100 mt-2">{banner.title || 'Banner Title'}</h3>
-          <p className="text-xs text-slate-300 line-clamp-1">{banner.subtitle || 'Banner Subtitle'}</p>
-        </div>
+        )}
       </div>
       <div className="p-4 flex items-center justify-between text-xs bg-slate-900/60 border-t border-slate-800">
         <div className="flex flex-col gap-1.5">
@@ -73,7 +84,8 @@ export default function BannersPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Partial<PromoBanner>>({
+    bannerType: 'custom',
     title: '',
     subtitle: '',
     imageUrl: '',
@@ -107,7 +119,7 @@ export default function BannersPage() {
       if (!payload.scheduledEndDate) delete payload.scheduledEndDate;
       await adminApi.createBanner(payload);
       setIsAddModalOpen(false);
-      setFormData({ title: '', subtitle: '', imageUrl: '', targetUrl: '', displayOrder: 1, isActive: true, scheduledStartDate: '', scheduledEndDate: '' });
+      setFormData({ bannerType: 'custom', title: '', subtitle: '', imageUrl: '', targetUrl: '', displayOrder: 1, isActive: true, scheduledStartDate: '', scheduledEndDate: '' });
       fetchBanners();
     } catch (err: any) {
       console.error('Failed to create banner:', err);
@@ -128,7 +140,7 @@ export default function BannersPage() {
       await adminApi.updateBanner(selectedBannerId, payload);
       setIsEditModalOpen(false);
       setSelectedBannerId(null);
-      setFormData({ title: '', subtitle: '', imageUrl: '', targetUrl: '', displayOrder: 1, isActive: true, scheduledStartDate: '', scheduledEndDate: '' });
+      setFormData({ bannerType: 'custom', title: '', subtitle: '', imageUrl: '', targetUrl: '', displayOrder: 1, isActive: true, scheduledStartDate: '', scheduledEndDate: '' });
       fetchBanners();
     } catch (err: any) {
       console.error('Failed to update banner:', err);
@@ -176,6 +188,7 @@ export default function BannersPage() {
   const openEditModal = (banner: PromoBanner) => {
     setSelectedBannerId(banner.id || (banner as any)._id);
     setFormData({
+      bannerType: banner.bannerType || 'custom',
       title: banner.title || '',
       subtitle: banner.subtitle || '',
       imageUrl: banner.imageUrl || '',
@@ -204,7 +217,7 @@ export default function BannersPage() {
         </div>
         <button
           onClick={() => {
-            setFormData({ title: '', subtitle: '', imageUrl: '', targetUrl: '', displayOrder: 1, isActive: true, scheduledStartDate: '', scheduledEndDate: '' });
+            setFormData({ title: '', subtitle: '', imageUrl: '', targetUrl: '', displayOrder: 1, isActive: true, bannerType: 'custom', scheduledStartDate: '', scheduledEndDate: '' });
             setIsAddModalOpen(true);
           }}
           className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-emerald-400 transition-all shadow-md shadow-emerald-500/20"
@@ -272,26 +285,41 @@ export default function BannersPage() {
               </label>
             </div>
             <div>
-              <label className="block text-slate-300 font-medium mb-1">Banner Title</label>
-            <input
-              type="text"
-              required
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="e.g. New Year Comfort Promo"
-              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-slate-300 font-medium mb-1">Subtitle / Marketing Message</label>
-            <input
-              type="text"
-              value={formData.subtitle}
-              onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-              placeholder="e.g. Save up to 20% on all orthopaedic series"
-              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
-            />
-          </div>
+              <label className="block text-slate-300 font-medium mb-1">Banner Design Type</label>
+              <select
+                value={formData.bannerType || 'custom'}
+                onChange={(e) => setFormData({ ...formData, bannerType: e.target.value as 'custom' | 'image_only' })}
+                className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+              >
+                <option value="custom">Start from scratch (Image + Text Overlay)</option>
+                <option value="image_only">Pre-designed Banner (Image Only)</option>
+              </select>
+            </div>
+            {formData.bannerType !== 'image_only' && (
+              <>
+                <div>
+                  <label className="block text-slate-300 font-medium mb-1">Banner Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="e.g. New Year Comfort Promo"
+                    className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-medium mb-1">Subtitle / Marketing Message</label>
+                  <input
+                    type="text"
+                    value={formData.subtitle}
+                    onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
+                    placeholder="e.g. Save up to 20% on all orthopaedic series"
+                    className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+                  />
+                </div>
+              </>
+            )}
           <div>
             <label className="block text-slate-300 font-medium mb-1">Banner Image</label>
             <div className="flex items-center gap-3 mb-2">

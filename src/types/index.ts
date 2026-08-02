@@ -78,7 +78,8 @@ export interface CustomerOrder {
 
 export interface PromoBanner {
   id: string;
-  title: string;
+  title?: string;
+  bannerType?: 'custom' | 'image_only';
   subtitle?: string;
   imageUrl: string;
   targetUrl?: string;
