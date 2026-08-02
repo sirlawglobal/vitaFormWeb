@@ -174,8 +174,9 @@ export default function BannersPage() {
     setIsUploadingImage(true);
     try {
       const res = await adminApi.uploadFile(file, 'banners');
-      if (res.url) {
-        setFormData((prev) => ({ ...prev, imageUrl: res.url }));
+      const uploadedUrl = res.data?.url || res.url;
+      if (uploadedUrl) {
+        setFormData((prev) => ({ ...prev, imageUrl: uploadedUrl }));
       }
     } catch (err: any) {
       console.error('Failed to upload image:', err);
