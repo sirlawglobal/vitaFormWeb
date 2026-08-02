@@ -79,6 +79,13 @@ export const adminApi = {
   updateBanner: (id: string, data: any): Promise<any> => apiClient.patch(`/admin/banners/${id}`, data),
   deleteBanner: (id: string): Promise<any> => apiClient.delete(`/admin/banners/${id}`),
 
+  // Promotions
+  getPromotions: (params?: { page?: number; limit?: number; search?: string; isActive?: boolean }): Promise<any> => 
+    apiClient.get('/promotions', { params }),
+  createPromotion: (data: any): Promise<any> => apiClient.post('/promotions', data),
+  updatePromotion: (id: string, data: any): Promise<any> => apiClient.patch(`/promotions/${id}`, data),
+  deletePromotion: (id: string): Promise<any> => apiClient.delete(`/promotions/${id}`),
+
   // Categories
   getCategories: (): Promise<any> => apiClient.get('/categories/admin/all'),
   createCategory: (data: any): Promise<any> => apiClient.post('/categories', data),
