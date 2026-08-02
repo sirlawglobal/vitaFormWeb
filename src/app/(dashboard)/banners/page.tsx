@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
-import { Image as ImageIcon, Plus, Edit, Trash2, ExternalLink, MoveUp, MoveDown, Loader2 } from 'lucide-react';
+import { Image as ImageIcon, Plus, Edit, Trash2, ExternalLink, MoveUp, MoveDown, Loader2, Upload } from 'lucide-react';
 import { PromoBanner } from '@/types';
 import { adminApi } from '@/lib/api';
 
@@ -13,6 +13,19 @@ export default function BannersPage() {
   const [banners, setBanners] = useState<PromoBanner[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedBannerId, setSelectedBannerId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const [formData, setFormData] = useState({
+    title: '',
+    subtitle: '',
+    imageUrl: '',
+    targetUrl: '',
+    displayOrder: 1,
+  });
 
   const fetchBanners = async () => {
     setLoading(true);
@@ -26,6 +39,87 @@ export default function BannersPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCreateBanner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await adminApi.createBanner({ ...formData, displayOrder: Number(formData.displayOrder), isActive: true });
+      setIsAddModalOpen(false);
+      setFormData({ title: '', subtitle: '', imageUrl: '', targetUrl: '', displayOrder: 1 });
+      fetchBanners();
+    } catch (err: any) {
+      console.error('Failed to create banner:', err);
+      alert(err?.error?.message || err?.message || 'Failed to create banner');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditBanner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedBannerId) return;
+    setIsSubmitting(true);
+    try {
+      await adminApi.updateBanner(selectedBannerId, { ...formData, displayOrder: Number(formData.displayOrder) });
+      setIsEditModalOpen(false);
+      setSelectedBannerId(null);
+      setFormData({ title: '', subtitle: '', imageUrl: '', targetUrl: '', displayOrder: 1 });
+      fetchBanners();
+    } catch (err: any) {
+      console.error('Failed to update banner:', err);
+      alert(err?.error?.message || err?.message || 'Failed to update banner');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteBanner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedBannerId) return;
+    setIsSubmitting(true);
+    try {
+      await adminApi.deleteBanner(selectedBannerId);
+      setIsDeleteModalOpen(false);
+      setSelectedBannerId(null);
+      fetchBanners();
+    } catch (err: any) {
+      console.error('Failed to delete banner:', err);
+      alert(err?.error?.message || err?.message || 'Failed to delete banner');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingImage(true);
+    try {
+      const res = await adminApi.uploadFile(file, 'banners');
+      if (res.url) {
+        setFormData((prev) => ({ ...prev, imageUrl: res.url }));
+      }
+    } catch (err: any) {
+      console.error('Failed to upload image:', err);
+      alert(err?.error?.message || err?.message || 'Failed to upload image');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const openEditModal = (banner: PromoBanner) => {
+    setSelectedBannerId(banner.id || (banner as any)._id);
+    setFormData({
+      title: banner.title || '',
+      subtitle: banner.subtitle || '',
+      imageUrl: banner.imageUrl || '',
+      targetUrl: banner.targetUrl || '',
+      displayOrder: banner.displayOrder || 1,
+    });
+    setIsEditModalOpen(true);
   };
 
   useEffect(() => {
@@ -43,7 +137,10 @@ export default function BannersPage() {
           </p>
         </div>
         <button
-          onClick={() => setIsAddModalOpen(true)}
+          onClick={() => {
+            setFormData({ title: '', subtitle: '', imageUrl: '', targetUrl: '', displayOrder: 1 });
+            setIsAddModalOpen(true);
+          }}
           className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-emerald-400 transition-all shadow-md shadow-emerald-500/20"
         >
           <Plus className="h-4 w-4" />
@@ -86,10 +183,19 @@ export default function BannersPage() {
                 <span>{banner.targetUrl}</span>
               </div>
               <div className="flex items-center gap-2">
-                <button className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-emerald-400">
+                <button 
+                  onClick={() => openEditModal(banner)}
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-emerald-400"
+                >
                   <Edit className="h-4 w-4" />
                 </button>
-                <button className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-rose-400">
+                <button 
+                  onClick={() => {
+                    setSelectedBannerId(banner.id || (banner as any)._id);
+                    setIsDeleteModalOpen(true);
+                  }}
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-rose-400"
+                >
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
@@ -102,10 +208,7 @@ export default function BannersPage() {
       {/* Add Banner Modal */}
       <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Create Homepage Promotional Banner">
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            setIsAddModalOpen(false);
-          }}
+          onSubmit={handleCreateBanner}
           className="space-y-4 text-xs"
         >
           <div>
@@ -113,6 +216,8 @@ export default function BannersPage() {
             <input
               type="text"
               required
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="e.g. New Year Comfort Promo"
               className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
             />
@@ -121,15 +226,27 @@ export default function BannersPage() {
             <label className="block text-slate-300 font-medium mb-1">Subtitle / Marketing Message</label>
             <input
               type="text"
+              value={formData.subtitle}
+              onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
               placeholder="e.g. Save up to 20% on all orthopaedic series"
               className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-slate-300 font-medium mb-1">Image URL</label>
+            <label className="block text-slate-300 font-medium mb-1">Banner Image</label>
+            <div className="flex items-center gap-3 mb-2">
+              <label className="flex items-center gap-2 cursor-pointer bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg transition-colors">
+                {isUploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                <span>{isUploadingImage ? 'Uploading...' : 'Upload File'}</span>
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={isUploadingImage} />
+              </label>
+              <span className="text-slate-500 text-xs">or paste URL below</span>
+            </div>
             <input
               type="url"
               required
+              value={formData.imageUrl}
+              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
               placeholder="https://images.unsplash.com/..."
               className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
             />
@@ -139,6 +256,8 @@ export default function BannersPage() {
               <label className="block text-slate-300 font-medium mb-1">Target Deep-Link / URL</label>
               <input
                 type="text"
+                value={formData.targetUrl}
+                onChange={(e) => setFormData({ ...formData, targetUrl: e.target.value })}
                 placeholder="/promotions/new-year"
                 className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
               />
@@ -147,7 +266,9 @@ export default function BannersPage() {
               <label className="block text-slate-300 font-medium mb-1">Display Order</label>
               <input
                 type="number"
-                defaultValue={1}
+                required
+                value={formData.displayOrder}
+                onChange={(e) => setFormData({ ...formData, displayOrder: parseInt(e.target.value) || 1 })}
                 className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
               />
             </div>
@@ -155,13 +276,120 @@ export default function BannersPage() {
           <div className="pt-4 flex justify-end gap-3 border-t border-slate-800">
             <button
               type="button"
+              disabled={isSubmitting}
               onClick={() => setIsAddModalOpen(false)}
-              className="rounded-lg border border-slate-800 px-4 py-2 text-slate-400 hover:bg-slate-800"
+              className="rounded-lg border border-slate-800 px-4 py-2 text-slate-400 hover:bg-slate-800 disabled:opacity-50"
             >
               Cancel
             </button>
-            <button type="submit" className="rounded-lg bg-emerald-500 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-400">
+            <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-50">
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               Publish Banner
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Banner Modal */}
+      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit Promotional Banner">
+        <form onSubmit={handleEditBanner} className="space-y-4 text-xs">
+          <div>
+            <label className="block text-slate-300 font-medium mb-1">Banner Title</label>
+            <input
+              type="text"
+              required
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              placeholder="e.g. New Year Comfort Promo"
+              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-slate-300 font-medium mb-1">Subtitle / Marketing Message</label>
+            <input
+              type="text"
+              value={formData.subtitle}
+              onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
+              placeholder="e.g. Save up to 20% on all orthopaedic series"
+              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-slate-300 font-medium mb-1">Banner Image</label>
+            <div className="flex items-center gap-3 mb-2">
+              <label className="flex items-center gap-2 cursor-pointer bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg transition-colors">
+                {isUploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                <span>{isUploadingImage ? 'Uploading...' : 'Upload File'}</span>
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={isUploadingImage} />
+              </label>
+              <span className="text-slate-500 text-xs">or paste URL below</span>
+            </div>
+            <input
+              type="url"
+              required
+              value={formData.imageUrl}
+              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+              placeholder="https://images.unsplash.com/..."
+              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-slate-300 font-medium mb-1">Target Deep-Link / URL</label>
+              <input
+                type="text"
+                value={formData.targetUrl}
+                onChange={(e) => setFormData({ ...formData, targetUrl: e.target.value })}
+                placeholder="/promotions/new-year"
+                className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-300 font-medium mb-1">Display Order</label>
+              <input
+                type="number"
+                required
+                value={formData.displayOrder}
+                onChange={(e) => setFormData({ ...formData, displayOrder: parseInt(e.target.value) || 1 })}
+                className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+              />
+            </div>
+          </div>
+          <div className="pt-4 flex justify-end gap-3 border-t border-slate-800">
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => setIsEditModalOpen(false)}
+              className="rounded-lg border border-slate-800 px-4 py-2 text-slate-400 hover:bg-slate-800 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-50">
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Delete Banner Modal */}
+      <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Confirm Deletion">
+        <form onSubmit={handleDeleteBanner} className="space-y-4 text-xs">
+          <div>
+            <p className="text-slate-300">Are you sure you want to delete this promotional banner? This action cannot be undone.</p>
+          </div>
+          <div className="pt-4 flex justify-end gap-3 border-t border-slate-800">
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => setIsDeleteModalOpen(false)}
+              className="rounded-lg border border-slate-800 px-4 py-2 text-slate-400 hover:bg-slate-800 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 rounded-lg bg-rose-500 px-4 py-2 font-semibold text-white hover:bg-rose-400 disabled:opacity-50">
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              Delete Banner
             </button>
           </div>
         </form>
