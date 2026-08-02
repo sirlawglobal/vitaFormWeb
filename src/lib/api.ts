@@ -66,6 +66,8 @@ export const adminApi = {
     apiClient.post('/admin/users', data),
   updateUserRole: (id: string, role: string): Promise<any> =>
     apiClient.patch(`/admin/users/${id}/role`, { role }),
+  resetUserPassword: (id: string, password: string): Promise<any> =>
+    apiClient.patch(`/admin/users/${id}/reset-password`, { password }),
 
   // Banners
   getBanners: (): Promise<any> => apiClient.get('/admin/banners'),

@@ -18,6 +18,14 @@ export default function UsersPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', phone: '', password: '', role: 'admin' });
 
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+  const [resetUserId, setResetUserId] = useState<string | null>(null);
+  const [resetPasswordValue, setResetPasswordValue] = useState('');
+
+  const [isChangeRoleModalOpen, setIsChangeRoleModalOpen] = useState(false);
+  const [changeRoleUserId, setChangeRoleUserId] = useState<string | null>(null);
+  const [changeRoleValue, setChangeRoleValue] = useState('customer');
+
   const fetchUsers = async () => {
     setLoading(true);
     try {
@@ -54,6 +62,42 @@ export default function UsersPage() {
     } catch (err: any) {
       console.error('Failed to provision user:', err);
       alert(err?.error?.message || err?.message || 'Failed to provision user');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetUserId) return;
+    setIsSubmitting(true);
+    try {
+      await adminApi.resetUserPassword(resetUserId, resetPasswordValue);
+      setIsResetPasswordModalOpen(false);
+      setResetPasswordValue('');
+      setResetUserId(null);
+      alert('Password reset successfully');
+    } catch (err: any) {
+      console.error('Failed to reset password:', err);
+      alert(err?.error?.message || err?.message || 'Failed to reset password');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleChangeRoleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!changeRoleUserId) return;
+    setIsSubmitting(true);
+    try {
+      await adminApi.updateUserRole(changeRoleUserId, changeRoleValue);
+      setIsChangeRoleModalOpen(false);
+      setChangeRoleUserId(null);
+      setChangeRoleValue('customer');
+      fetchUsers();
+    } catch (err: any) {
+      console.error('Failed to change role:', err);
+      alert(err?.error?.message || err?.message || 'Failed to change role');
     } finally {
       setIsSubmitting(false);
     }
@@ -170,9 +214,28 @@ export default function UsersPage() {
                   </td>
                   <td className="py-3.5 px-4 text-slate-400">{formatDate(user.createdAt)}</td>
                   <td className="py-3.5 px-4 text-right">
-                    <button className="rounded-md border border-slate-800 bg-slate-900 px-2.5 py-1 text-xs font-medium text-emerald-400 hover:bg-slate-800">
-                      Change Role
-                    </button>
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => {
+                          setResetUserId(user.id || (user as any)._id);
+                          setResetPasswordValue('');
+                          setIsResetPasswordModalOpen(true);
+                        }}
+                        className="rounded-md border border-slate-800 bg-slate-900 px-2.5 py-1 text-xs font-medium text-amber-400 hover:bg-slate-800"
+                      >
+                        Reset Password
+                      </button>
+                      <button
+                        onClick={() => {
+                          setChangeRoleUserId(user.id || (user as any)._id);
+                          setChangeRoleValue(user.role);
+                          setIsChangeRoleModalOpen(true);
+                        }}
+                        className="rounded-md border border-slate-800 bg-slate-900 px-2.5 py-1 text-xs font-medium text-emerald-400 hover:bg-slate-800"
+                      >
+                        Change Role
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -268,6 +331,71 @@ export default function UsersPage() {
             <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-50">
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               Provision Account
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Reset Password Modal */}
+      <Modal isOpen={isResetPasswordModalOpen} onClose={() => setIsResetPasswordModalOpen(false)} title="Reset Staff Password">
+        <form onSubmit={handleResetPasswordSubmit} className="space-y-4 text-xs">
+          <div>
+            <label className="block text-slate-300 font-medium mb-1">New Password</label>
+            <input
+              type="text"
+              required
+              minLength={8}
+              value={resetPasswordValue}
+              onChange={(e) => setResetPasswordValue(e.target.value)}
+              placeholder="Must be at least 8 characters"
+              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+            />
+          </div>
+          <div className="pt-4 flex justify-end gap-3 border-t border-slate-800">
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => setIsResetPasswordModalOpen(false)}
+              className="rounded-lg border border-slate-800 px-4 py-2 text-slate-400 hover:bg-slate-800 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-50">
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              Reset Password
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Change Role Modal */}
+      <Modal isOpen={isChangeRoleModalOpen} onClose={() => setIsChangeRoleModalOpen(false)} title="Change User Role">
+        <form onSubmit={handleChangeRoleSubmit} className="space-y-4 text-xs">
+          <div>
+            <label className="block text-slate-300 font-medium mb-1">Select New Role</label>
+            <select
+              value={changeRoleValue}
+              onChange={(e) => setChangeRoleValue(e.target.value)}
+              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+            >
+              <option value="admin">Administrator</option>
+              <option value="support">Support Agent</option>
+              <option value="dealer">Authorized Dealer</option>
+              <option value="customer">Customer</option>
+            </select>
+          </div>
+          <div className="pt-4 flex justify-end gap-3 border-t border-slate-800">
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => setIsChangeRoleModalOpen(false)}
+              className="rounded-lg border border-slate-800 px-4 py-2 text-slate-400 hover:bg-slate-800 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-50">
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              Update Role
             </button>
           </div>
         </form>
