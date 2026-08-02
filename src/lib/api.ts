@@ -154,5 +154,13 @@ export const adminApi = {
     createQuestion: (data: any) => apiClient.post('/sleep-quiz/admin/questions', data),
     updateQuestion: (id: string, data: any) => apiClient.patch(`/sleep-quiz/admin/questions/${id}`, data),
     deleteQuestion: (id: string) => apiClient.delete(`/sleep-quiz/admin/questions/${id}`),
+  },
+
+  // Analytics & Funnel Tracking
+  analytics: {
+    getDashboard: (groupBy?: 'day' | 'week' | 'month') => apiClient.get('/analytics/dashboard', { params: { groupBy } }),
+    getFunnelMetrics: () => apiClient.get('/analytics/funnel'),
+    getAbandonedCarts: (limit?: number) => apiClient.get('/analytics/abandoned-carts', { params: { limit } }),
+    getUserActivity: (userId: string, limit?: number) => apiClient.get(`/analytics/users/${userId}/activity`, { params: { limit } }),
   }
 };
