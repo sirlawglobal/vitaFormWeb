@@ -16,8 +16,8 @@ export default function CategoriesPage() {
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: '', description: '' });
-  const [editFormData, setEditFormData] = useState({ id: '', name: '', description: '', isActive: true });
+  const [formData, setFormData] = useState({ name: '', description: '', parentId: '' });
+  const [editFormData, setEditFormData] = useState({ id: '', name: '', description: '', parentId: '', isActive: true });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchCategories = async () => {
@@ -56,11 +56,12 @@ export default function CategoriesPage() {
         name: formData.name,
         slug: formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''),
         description: formData.description,
+        parentId: formData.parentId || undefined,
         isActive: true
       };
       await adminApi.createCategory(payload);
       setIsAddModalOpen(false);
-      setFormData({ name: '', description: '' });
+      setFormData({ name: '', description: '', parentId: '' });
       fetchCategories();
     } catch (err: any) {
       console.error('Failed to create category:', err);
@@ -75,6 +76,7 @@ export default function CategoriesPage() {
       id: cat.id,
       name: cat.name,
       description: cat.description || '',
+      parentId: (cat as any).parentId || '',
       isActive: cat.isActive !== undefined ? cat.isActive : true
     });
     setIsEditModalOpen(true);
@@ -87,6 +89,7 @@ export default function CategoriesPage() {
       const payload = {
         name: editFormData.name,
         description: editFormData.description,
+        parentId: editFormData.parentId || null, // null removes the parent
         isActive: editFormData.isActive
       };
       await adminApi.updateCategory(editFormData.id, payload);
@@ -207,6 +210,20 @@ export default function CategoriesPage() {
               className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none min-h-[80px]"
             />
           </div>
+          <div>
+            <label className="block text-slate-300 font-medium mb-1">Parent Category (Optional)</label>
+            <select
+              value={formData.parentId}
+              onChange={(e) => setFormData({ ...formData, parentId: e.target.value })}
+              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+            >
+              <option value="">None (Top-Level Category)</option>
+              {categories.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            <p className="text-[10px] text-slate-500 mt-1">Select a parent if this is a sub-category.</p>
+          </div>
           <div className="pt-4 flex justify-end gap-3 border-t border-slate-800">
             <button
               type="button"
@@ -245,6 +262,19 @@ export default function CategoriesPage() {
               onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
               className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none min-h-[80px]"
             />
+          </div>
+          <div>
+            <label className="block text-slate-300 font-medium mb-1">Parent Category</label>
+            <select
+              value={editFormData.parentId}
+              onChange={(e) => setEditFormData({ ...editFormData, parentId: e.target.value })}
+              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+            >
+              <option value="">None (Top-Level Category)</option>
+              {categories.filter(c => c.id !== editFormData.id).map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
           </div>
           <div className="flex items-center gap-2 pt-2">
             <input
