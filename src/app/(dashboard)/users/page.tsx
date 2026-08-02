@@ -16,7 +16,7 @@ export default function UsersPage() {
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '', role: 'admin' });
+  const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', phone: '', password: '', role: 'admin' });
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -41,12 +41,15 @@ export default function UsersPage() {
     setIsSubmitting(true);
     try {
       await adminApi.createUser({
-        name: formData.name,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
         role: formData.role
       });
       setIsProvisionModalOpen(false);
-      setFormData({ name: '', email: '', role: 'admin' });
+      setFormData({ firstName: '', lastName: '', email: '', phone: '', password: '', role: 'admin' });
       fetchUsers();
     } catch (err: any) {
       console.error('Failed to provision user:', err);
@@ -182,16 +185,29 @@ export default function UsersPage() {
       {/* Provision Staff Modal */}
       <Modal isOpen={isProvisionModalOpen} onClose={() => setIsProvisionModalOpen(false)} title="Provision Staff User Account">
         <form onSubmit={handleCreateUser} className="space-y-4 text-xs">
-          <div>
-            <label className="block text-slate-300 font-medium mb-1">Full Name</label>
-            <input
-              type="text"
-              required
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g. Oluwaseun Adeleke"
-              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-slate-300 font-medium mb-1">First Name</label>
+              <input
+                type="text"
+                required
+                value={formData.firstName}
+                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                placeholder="e.g. Oluwaseun"
+                className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-300 font-medium mb-1">Last Name</label>
+              <input
+                type="text"
+                required
+                value={formData.lastName}
+                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                placeholder="e.g. Adeleke"
+                className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-slate-300 font-medium mb-1">Official Email Address</label>
@@ -201,6 +217,29 @@ export default function UsersPage() {
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               placeholder="o.adeleke@vitafoam.com"
+              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-slate-300 font-medium mb-1">Phone Number</label>
+            <input
+              type="tel"
+              required
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              placeholder="+2348012345678"
+              className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-slate-300 font-medium mb-1">Temporary Password</label>
+            <input
+              type="text"
+              required
+              minLength={8}
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              placeholder="Must be at least 8 characters"
               className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-slate-200 focus:border-emerald-500 focus:outline-none"
             />
           </div>
