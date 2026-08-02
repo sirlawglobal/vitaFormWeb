@@ -109,9 +109,13 @@ export const adminApi = {
   uploadFile: (file: File, folder?: string): Promise<any> => {
     const formData = new FormData();
     formData.append('file', file);
-    if (folder) formData.append('folder', folder);
     
-    return apiClient.post('/storage/upload', formData);
+    return apiClient.post('/storage/upload', formData, {
+      params: { folder },
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
   },
 
   // Orders
