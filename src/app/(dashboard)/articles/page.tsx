@@ -9,8 +9,8 @@ import { adminApi } from '@/lib/api';
 import { extractDataArray } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
-import 'react-quill/dist/quill.snow.css';
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
+import 'react-quill-new/dist/quill.snow.css';
 
 export interface Article {
   _id?: string;
