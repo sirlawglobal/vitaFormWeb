@@ -83,6 +83,7 @@ export interface PromoBanner {
   subtitle?: string;
   imageUrl: string;
   targetUrl?: string;
+  buttonText?: string;
   isActive: boolean;
   displayOrder: number;
   scheduledStartDate?: string;

@@ -122,14 +122,25 @@ export const adminApi = {
   adjustInventory: (data: any): Promise<any> => apiClient.post('/inventory/adjust', data),
 
   // Storage & Uploads
+  // NOTE: File uploads bypass the Next.js Vercel proxy (which has a ~4.5MB body limit
+  // causing 502 errors on multipart requests) and post directly to the backend.
   uploadFile: (file: File, folder?: string): Promise<any> => {
     const formData = new FormData();
     formData.append('file', file);
-    
-    return apiClient.post('/storage/upload', formData, {
+
+    const DIRECT_API = process.env.NEXT_PUBLIC_DIRECT_API_URL || 'https://vitaformapi-tx0e.onrender.com/api/v1';
+
+    // Get auth token for the direct request
+    const token =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('auth_token') || localStorage.getItem('token')
+        : null;
+
+    return axios.post(`${DIRECT_API}/storage/upload`, formData, {
       params: { folder },
       headers: {
         'Content-Type': 'multipart/form-data',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     });
   },

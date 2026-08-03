@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { Plus, Edit, Trash2, Send } from 'lucide-react';
+import { Plus, Edit, Trash2, Send, Upload, Loader2, ImageIcon } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { adminApi } from '@/lib/api';
 import { extractDataArray } from '@/lib/utils';
@@ -42,6 +42,27 @@ export default function ArticlesPage() {
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingImage(true);
+    try {
+      const res = await adminApi.uploadFile(file, 'articles');
+      const uploadedUrl = res.data?.url || res.url;
+      if (uploadedUrl) {
+        setFormData((prev) => ({ ...prev, coverImage: uploadedUrl }));
+      }
+    } catch (err: any) {
+      console.error('Failed to upload article image:', err);
+      const errorMsg = err?.error?.message || err?.message || 'Failed to upload image';
+      alert(Array.isArray(errorMsg) ? errorMsg.join('\n') : errorMsg);
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
   const [formData, setFormData] = useState<Partial<Article>>({
     title: '',
@@ -311,8 +332,35 @@ export default function ArticlesPage() {
                 <input type="text" value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value})} className="w-full rounded-lg border border-slate-700 bg-slate-900 p-2.5 text-sm text-slate-100" placeholder="Auto-generated if left blank" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Cover Image URL (Optional)</label>
-                <input type="url" value={formData.coverImage} onChange={e => setFormData({...formData, coverImage: e.target.value})} className="w-full rounded-lg border border-slate-700 bg-slate-900 p-2.5 text-sm text-slate-100" />
+                <label className="block text-xs font-medium text-slate-400 mb-1">Featured / Cover Image</label>
+                <div className="flex items-center gap-3 mb-2">
+                  <label className="flex items-center gap-2 cursor-pointer rounded-lg bg-slate-800 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700 transition-colors">
+                    {isUploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4 text-emerald-400" />}
+                    <span>{isUploadingImage ? 'Uploading...' : 'Upload Image File'}</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={isUploadingImage} />
+                  </label>
+                  <span className="text-xs text-slate-500">or paste URL below</span>
+                </div>
+                <input
+                  type="url"
+                  value={formData.coverImage || ''}
+                  onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
+                  placeholder="https://images.unsplash.com/..."
+                  className="w-full rounded-lg border border-slate-700 bg-slate-900 p-2.5 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none"
+                />
+                {formData.coverImage && (
+                  <div className="mt-2.5 relative aspect-video w-full overflow-hidden rounded-lg border border-slate-800 bg-slate-950">
+                    <img src={formData.coverImage} alt="Feature preview" className="h-full w-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, coverImage: '' })}
+                      className="absolute top-2 right-2 rounded-full bg-slate-900/80 p-1 text-slate-400 hover:text-slate-100 backdrop-blur"
+                      title="Remove image"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-1">Tags (comma separated)</label>
