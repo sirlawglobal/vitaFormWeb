@@ -148,6 +148,8 @@ export const adminApi = {
   // Orders
   getOrders: (params?: { page?: number; limit?: number; status?: string }): Promise<any> =>
     apiClient.get('/orders/admin/all', { params }),
+  updateOrderStatus: (id: string, data: { status: string; note?: string; trackingNumber?: string; courierName?: string }): Promise<any> =>
+    apiClient.patch(`/orders/admin/${id}/status`, data),
 
   // Payments
   getPayments: (params?: { page?: number; limit?: number }): Promise<any> =>

@@ -12,6 +12,7 @@ import { adminApi } from '@/lib/api';
 export default function OrdersPage() {
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [loading, setLoading] = useState(false);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -24,6 +25,20 @@ export default function OrdersPage() {
       setOrders([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    setUpdatingId(orderId);
+    try {
+      await adminApi.updateOrderStatus(orderId, { status: newStatus });
+      setOrders((prev) =>
+        prev.map((o: any) => (o._id === orderId ? { ...o, orderStatus: newStatus } : o)),
+      );
+    } catch (err: any) {
+      alert(err.response?.data?.message || err.message || 'Failed to update order status');
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -88,12 +103,26 @@ export default function OrdersPage() {
                       </Badge>
                     </td>
                     <td className="py-3.5 px-4">
-                      <Badge status={order.orderStatus || 'PENDING'}>
-                        {order.orderStatus || 'PENDING'}
-                      </Badge>
+                      <select
+                        value={order.orderStatus || 'PENDING'}
+                        disabled={updatingId === order._id}
+                        onChange={(e) => handleStatusChange(order._id, e.target.value)}
+                        className="bg-slate-900 border border-slate-700 text-emerald-400 font-mono text-xs rounded px-2.5 py-1 focus:outline-none focus:border-emerald-500 font-bold cursor-pointer disabled:opacity-50"
+                      >
+                        <option value="PENDING">PENDING</option>
+                        <option value="CONFIRMED">CONFIRMED</option>
+                        <option value="PROCESSING">PROCESSING</option>
+                        <option value="SHIPPED">SHIPPED</option>
+                        <option value="DELIVERED">DELIVERED</option>
+                        <option value="CANCELLED">CANCELLED</option>
+                      </select>
                     </td>
                     <td className="py-3.5 px-4 text-right">
-                      <button className="rounded-md border border-slate-800 bg-slate-900 p-1.5 text-slate-400 hover:bg-slate-800 hover:text-emerald-400">
+                      <button
+                        onClick={() => alert(`Order Ref: ${order.orderNumber}\nCustomer: ${order.shippingAddress?.email || 'N/A'}\nTotal: ₦${order.paymentSummary?.totalAmount?.toLocaleString() || 0}`)}
+                        className="rounded-md border border-slate-800 bg-slate-900 p-1.5 text-slate-400 hover:bg-slate-800 hover:text-emerald-400"
+                        title="View Details"
+                      >
                         <Eye className="h-4 w-4" />
                       </button>
                     </td>
