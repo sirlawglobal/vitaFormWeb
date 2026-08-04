@@ -149,6 +149,10 @@ export const adminApi = {
   getOrders: (params?: { page?: number; limit?: number; status?: string }): Promise<any> =>
     apiClient.get('/orders/admin/all', { params }),
 
+  // Payments
+  getPayments: (params?: { page?: number; limit?: number }): Promise<any> =>
+    apiClient.get('/payments/admin/transactions', { params }),
+
   // Dealers
   getDealers: (params?: { page?: number; limit?: number }): Promise<any> =>
     apiClient.get('/dealers', { params }),
