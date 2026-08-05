@@ -154,6 +154,10 @@ export const adminApi = {
   // Payments
   getPayments: (params?: { page?: number; limit?: number }): Promise<any> =>
     apiClient.get('/payments/admin/transactions', { params }),
+  getGateways: (): Promise<any> =>
+    apiClient.get('/payments/admin/gateways'),
+  updateGateways: (data: { defaultProvider: string; enabledProviders?: string[] }): Promise<any> =>
+    apiClient.patch('/payments/admin/gateways', data),
 
   // Dealers
   getDealers: (params?: { page?: number; limit?: number }): Promise<any> =>

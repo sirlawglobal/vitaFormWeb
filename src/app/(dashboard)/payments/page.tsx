@@ -10,6 +10,8 @@ import { adminApi } from '@/lib/api';
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [activeProvider, setActiveProvider] = useState('paystack');
+  const [savingGateway, setSavingGateway] = useState(false);
 
   const fetchPayments = async () => {
     setLoading(true);
@@ -25,8 +27,33 @@ export default function PaymentsPage() {
     }
   };
 
+  const fetchGatewaySettings = async () => {
+    try {
+      const res: any = await adminApi.getGateways();
+      const data = res?.data ?? res;
+      if (data?.defaultProvider) {
+        setActiveProvider(data.defaultProvider.toLowerCase());
+      }
+    } catch (err) {
+      console.warn('[Payments] Failed to fetch gateway settings:', err);
+    }
+  };
+
+  const handleUpdateGateway = async (provider: string) => {
+    setSavingGateway(true);
+    try {
+      await adminApi.updateGateways({ defaultProvider: provider, enabledProviders: [provider] });
+      setActiveProvider(provider.toLowerCase());
+    } catch (err: any) {
+      alert(err.response?.data?.message || err.message || 'Failed to update active payment provider');
+    } finally {
+      setSavingGateway(false);
+    }
+  };
+
   useEffect(() => {
     fetchPayments();
+    fetchGatewaySettings();
   }, []);
 
   return (
@@ -35,12 +62,48 @@ export default function PaymentsPage() {
       <div>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-100">Payment Transactions</h1>
-            <p className="text-xs text-slate-400 mt-1">Audit payment gateway transactions, gateway reference logs, and process refunds</p>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-100">Payment Gateway & Transactions</h1>
+            <p className="text-xs text-slate-400 mt-1">Configure customer checkout payment provider and audit transaction logs</p>
           </div>
         </div>
         <SalesTabs />
       </div>
+
+      {/* Gateway Switcher Card */}
+      <Card className="p-5 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-bold text-slate-100">Active Checkout Payment Provider</h2>
+            <p className="text-[11px] text-slate-400">Select which payment option is displayed to customers at storefront checkout</p>
+          </div>
+          <span className="text-xs font-mono font-bold text-emerald-400 uppercase bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-md">
+            Active: {activeProvider}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+          {['paystack', 'flutterwave', 'moniepoint', 'opay'].map((provider) => {
+            const isSelected = activeProvider === provider;
+            return (
+              <button
+                key={provider}
+                disabled={savingGateway}
+                onClick={() => handleUpdateGateway(provider)}
+                className={`p-3 rounded-lg border text-xs font-bold capitalize transition-all text-center flex flex-col items-center justify-center gap-1 ${
+                  isSelected
+                    ? 'bg-emerald-500/15 border-emerald-500 text-emerald-400 shadow-sm shadow-emerald-950/30'
+                    : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                }`}
+              >
+                <span>{provider}</span>
+                <span className="text-[10px] font-normal text-slate-500">
+                  {isSelected ? '✓ Active' : 'Click to Enable'}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </Card>
 
       <Card className="p-0 overflow-hidden">
         <div className="overflow-x-auto">
