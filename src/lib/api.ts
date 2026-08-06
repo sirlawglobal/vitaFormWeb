@@ -165,7 +165,7 @@ export const adminApi = {
 
   // Notifications
   broadcastNotification: (data: { title: string; body: string; type?: string }): Promise<any> =>
-    apiClient.post('/api/v1/notifications/admin/broadcast', data),
+    apiClient.post('/notifications/admin/broadcast', data),
 
   // Sleep Quiz
   sleepQuiz: {
