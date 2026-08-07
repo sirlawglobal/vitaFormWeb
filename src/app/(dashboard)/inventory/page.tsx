@@ -52,25 +52,45 @@ export default function InventoryPage() {
     setIsRestockModalOpen(true);
   };
 
+  const getCleanMongoId = (idVal: any): string | undefined => {
+    if (!idVal) return undefined;
+    if (typeof idVal === 'string' && /^[0-9a-fA-F]{24}$/.test(idVal)) return idVal;
+    if (typeof idVal === 'object') {
+      const candidate = idVal._id || idVal.id;
+      if (typeof candidate === 'string' && /^[0-9a-fA-F]{24}$/.test(candidate)) return candidate;
+    }
+    return undefined;
+  };
+
   const handleConfirmRestock = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedRestockItem || !quantityToAdd) return;
 
     setIsSubmittingRestock(true);
     try {
-      await adminApi.adjustInventory({
+      const targetProductId = getCleanMongoId(selectedRestockItem.productId) || getCleanMongoId(selectedRestockItem);
+
+      const payload: any = {
         sku: selectedRestockItem.sku,
-        productId: selectedRestockItem.productId?._id || selectedRestockItem.productId,
         quantityChange: Number(quantityToAdd),
         reason: restockReason
-      });
+      };
+
+      if (targetProductId) {
+        payload.productId = targetProductId;
+      }
+
+      await adminApi.adjustInventory(payload);
 
       setIsRestockModalOpen(false);
       setSelectedRestockItem(null);
       fetchInventory();
     } catch (err: any) {
       console.error('Failed to restock inventory:', err);
-      alert(err?.error?.message || err?.message || 'Failed to restock inventory item');
+      const msg = Array.isArray(err?.message)
+        ? err.message.join(', ')
+        : (err?.error?.message || err?.message || (typeof err === 'string' ? err : 'Failed to restock inventory item'));
+      alert(msg);
     } finally {
       setIsSubmittingRestock(false);
     }
