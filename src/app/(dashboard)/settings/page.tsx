@@ -13,6 +13,8 @@ export default function SettingsPage() {
     contactEmail: '',
     supportPhone: '',
     maintenanceMode: false,
+    welcomeNotificationTitle: '',
+    welcomeNotificationBody: '',
     metadata: { bannerAnnouncement: '' },
   });
 
@@ -47,9 +49,8 @@ export default function SettingsPage() {
         contactEmail: settings.contactEmail,
         supportPhone: settings.supportPhone,
         maintenanceMode: settings.maintenanceMode,
-        // Nest metadata if we want to save custom fields not explicitly in DTO (though DTO doesn't allow metadata currently, wait! Let's check DTO)
-        // Wait, DTO only allows appName, contactEmail, supportPhone, privacyPolicyUrl, termsOfServiceUrl, maintenanceMode.
-        // It uses whitelist true? If so, metadata gets stripped, but we won't send it to avoid 400 bad request.
+        welcomeNotificationTitle: settings.welcomeNotificationTitle,
+        welcomeNotificationBody: settings.welcomeNotificationBody,
       };
       
       await adminApi.updateSettings(payload);
@@ -139,6 +140,33 @@ export default function SettingsPage() {
                 value={settings.supportPhone || ''}
                 onChange={(e) => setSettings({ ...settings, supportPhone: e.target.value })}
                 className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-xs text-slate-200 focus:border-emerald-500 focus:outline-none"
+              />
+            </div>
+          </div>
+        </Card>
+
+        {/* Dynamic Welcome Notifications */}
+        <Card className="space-y-4">
+          <h2 className="text-sm font-bold text-slate-200 border-b border-slate-800 pb-3">New User Welcome Notification</h2>
+          <div className="grid grid-cols-1 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">Welcome Notification Title</label>
+              <input
+                type="text"
+                value={settings.welcomeNotificationTitle || ''}
+                onChange={(e) => setSettings({ ...settings, welcomeNotificationTitle: e.target.value })}
+                placeholder="e.g. Welcome to Vitafoam!"
+                className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-xs text-slate-200 focus:border-emerald-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">Welcome Notification Body</label>
+              <textarea
+                value={settings.welcomeNotificationBody || ''}
+                onChange={(e) => setSettings({ ...settings, welcomeNotificationBody: e.target.value })}
+                placeholder="e.g. Your account has been successfully verified. Enjoy shopping with us!"
+                rows={3}
+                className="w-full rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-xs text-slate-200 focus:border-emerald-500 focus:outline-none resize-none"
               />
             </div>
           </div>

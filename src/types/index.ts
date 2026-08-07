@@ -122,4 +122,6 @@ export interface PlatformSettings {
   defaultLanguage?: string;
   maintenanceMode: boolean;
   metadata?: Record<string, any>;
+  welcomeNotificationTitle?: string;
+  welcomeNotificationBody?: string;
 }
