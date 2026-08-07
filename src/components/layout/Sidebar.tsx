@@ -102,20 +102,25 @@ const navigationGroups: NavGroup[] = [
 export function Sidebar() {
   const pathname = usePathname();
   const [lowStockCount, setLowStockCount] = useState<number | null>(null);
+  const [pendingOrders, setPendingOrders] = useState<number | null>(null);
 
   useEffect(() => {
-    const fetchLowStock = async () => {
+    const fetchSidebarMetrics = async () => {
       try {
-        const res = await adminApi.getLowStock();
-        const data = extractDataArray(res);
-        if (data.length > 0) {
-          setLowStockCount(data.length);
+        const res = await adminApi.getDashboardOverview();
+        const data = res?.data || res;
+        
+        if (data?.lowStockProductsCount !== undefined) {
+          setLowStockCount(data.lowStockProductsCount);
+        }
+        if (data?.pendingOrders !== undefined) {
+          setPendingOrders(data.pendingOrders);
         }
       } catch (err) {
-        console.warn('Failed to fetch low stock count for sidebar');
+        console.warn('Failed to fetch metrics for sidebar');
       }
     };
-    fetchLowStock();
+    fetchSidebarMetrics();
   }, []);
 
   return (
@@ -147,8 +152,11 @@ export function Sidebar() {
                   const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
                   
                   let dynamicBadge = item.badge;
-                  if (item.name === 'Inventory' && lowStockCount !== null) {
+                  if (item.name === 'Inventory' && lowStockCount !== null && lowStockCount > 0) {
                     dynamicBadge = `${lowStockCount} Low`;
+                  }
+                  if (item.name === 'Orders' && pendingOrders !== null && pendingOrders > 0) {
+                    dynamicBadge = pendingOrders.toString();
                   }
 
                   return (
