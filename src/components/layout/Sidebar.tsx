@@ -56,7 +56,7 @@ const navigationGroups: NavGroup[] = [
   {
     section: 'SALES',
     items: [
-      { name: 'Orders', href: '/orders', icon: ShoppingBag, badge: '12' },
+      { name: 'Orders', href: '/orders', icon: ShoppingBag },
       { name: 'Abandoned Carts', href: '/abandoned-carts', icon: ShoppingCart },
       { name: 'Payments', href: '/payments', icon: CreditCard },
     ],
