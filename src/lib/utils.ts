@@ -48,7 +48,7 @@ export function extractDataArray(data: any): any[] {
 
 export function getStatusBadgeColor(status: string): string {
   const lower = status.toLowerCase();
-  if (['active', 'completed', 'delivered', 'paid', 'verified'].includes(lower)) {
+  if (['active', 'completed', 'delivered', 'paid', 'verified', 'success'].includes(lower)) {
     return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
   }
   if (['pending', 'processing', 'shipped', 'in_progress', 'low_stock'].includes(lower)) {
