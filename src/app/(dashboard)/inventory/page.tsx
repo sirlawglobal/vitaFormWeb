@@ -87,9 +87,23 @@ export default function InventoryPage() {
       fetchInventory();
     } catch (err: any) {
       console.error('Failed to restock inventory:', err);
-      const msg = Array.isArray(err?.message)
-        ? err.message.join(', ')
-        : (err?.error?.message || err?.message || (typeof err === 'string' ? err : 'Failed to restock inventory item'));
+      const validationErrors = err?.error?.details?.errors || err?.details?.errors;
+      let msg = 'Failed to restock inventory item';
+      
+      if (Array.isArray(validationErrors) && validationErrors.length > 0) {
+        msg = validationErrors
+          .map((e: any) => e.constraints ? Object.values(e.constraints).join(', ') : e.message || 'Validation error')
+          .join(' | ');
+      } else if (Array.isArray(err?.error?.message)) {
+        msg = err.error.message.join(', ');
+      } else if (Array.isArray(err?.message)) {
+        msg = err.message.join(', ');
+      } else if (typeof err?.error?.message === 'string') {
+        msg = err.error.message;
+      } else if (typeof err?.message === 'string') {
+        msg = err.message;
+      }
+
       alert(msg);
     } finally {
       setIsSubmittingRestock(false);
