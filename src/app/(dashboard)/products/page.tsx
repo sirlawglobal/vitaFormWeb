@@ -20,6 +20,11 @@ export default function ProductsPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [editSelectedFile, setEditSelectedFile] = useState<File | null>(null);
   
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(25);
+  const [totalItems, setTotalItems] = useState(0);
+
   const [formData, setFormData] = useState({
     title: '',
     sku: '',
@@ -37,15 +42,16 @@ export default function ProductsPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = async (currentPage = page, currentLimit = limit, search = searchTerm) => {
     setLoading(true);
     try {
       const [prodData, catData, invData]: any = await Promise.all([
-        adminApi.getProducts(),
+        adminApi.getProducts({ page: currentPage, limit: currentLimit, search }),
         adminApi.getCategories(),
-        adminApi.getInventory()
+        adminApi.getInventory({ limit: 1000 })
       ]);
       const rawProducts = extractDataArray(prodData);
+      const total = prodData?.data?.total ?? prodData?.total ?? rawProducts.length;
       const invArray = extractDataArray(invData);
 
       // Join inventory stock levels to the product data
@@ -63,6 +69,7 @@ export default function ProductsPage() {
       });
 
       setProducts(productsWithInventory);
+      setTotalItems(total);
       setCategories(extractDataArray(catData));
     } catch (err) {
       console.warn('[Products] Failed to fetch data:', err);
@@ -74,8 +81,8 @@ export default function ProductsPage() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchData(page, limit, searchTerm);
+  }, [page, limit]);
 
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -241,7 +248,7 @@ export default function ProductsPage() {
               <Filter className="h-3.5 w-3.5 text-slate-400" />
               <span>All Categories</span>
             </button>
-            <span className="text-xs text-slate-400 font-medium">Showing {filteredProducts.length} items</span>
+            <span className="text-xs text-slate-400 font-medium">Showing {products.length} items (Total {totalItems.toLocaleString()})</span>
           </div>
         </div>
       </Card>
@@ -335,6 +342,69 @@ export default function ProductsPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination Footer */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-slate-800 bg-slate-900/60 text-xs">
+          <div className="flex items-center gap-3 text-slate-400">
+            <span>
+              Showing <strong className="text-slate-200">{(page - 1) * limit + 1}</strong> to{' '}
+              <strong className="text-slate-200">{Math.min(page * limit, totalItems)}</strong> of{' '}
+              <strong className="text-slate-200">{totalItems.toLocaleString()}</strong> items
+            </span>
+            <div className="flex items-center gap-1.5 ml-2">
+              <span className="text-[10px]">Per page:</span>
+              <select
+                value={limit}
+                onChange={(e) => {
+                  setLimit(Number(e.target.value));
+                  setPage(1);
+                }}
+                className="rounded border border-slate-800 bg-slate-950 px-2 py-1 text-xs text-slate-300 focus:border-emerald-500 focus:outline-none"
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage(1)}
+              disabled={page === 1}
+              className="rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1 text-slate-300 hover:border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-xs"
+            >
+              First
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-1 text-slate-300 hover:border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-xs"
+            >
+              Previous
+            </button>
+            
+            <span className="px-2 text-slate-400 text-xs font-medium">
+              Page <strong className="text-emerald-400">{page}</strong> of <strong className="text-slate-200">{Math.ceil(totalItems / limit) || 1}</strong>
+            </span>
+
+            <button
+              onClick={() => setPage((p) => Math.min(Math.ceil(totalItems / limit) || 1, p + 1))}
+              disabled={page >= Math.ceil(totalItems / limit)}
+              className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-1 text-slate-300 hover:border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-xs"
+            >
+              Next
+            </button>
+            <button
+              onClick={() => setPage(Math.ceil(totalItems / limit) || 1)}
+              disabled={page >= Math.ceil(totalItems / limit)}
+              className="rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1 text-slate-300 hover:border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-xs"
+            >
+              Last
+            </button>
+          </div>
         </div>
       </Card>
 
