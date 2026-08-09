@@ -95,7 +95,8 @@ export default function ReviewsPage() {
                   <span className="text-[10px] text-slate-400 block mt-0.5">
                     Reviewed: <span className="font-semibold text-emerald-400">{review.productId?.name || 'Unknown Product'}</span>
                   </span>
-                  <p className="text-xs text-slate-300 mt-2">"{review.comment}"</p>
+                  {review.title && <h4 className="font-semibold text-slate-200 mt-2 text-sm">{review.title}</h4>}
+                  <p className="text-xs text-slate-300 mt-1">"{review.body || review.comment}"</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button 
