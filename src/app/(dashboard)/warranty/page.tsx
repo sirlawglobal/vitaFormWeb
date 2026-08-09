@@ -12,6 +12,7 @@ export default function WarrantyPage() {
   const [claims, setClaims] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
 
   const fetchClaims = async () => {
     setIsLoading(true);
@@ -31,6 +32,7 @@ export default function WarrantyPage() {
                 warrantyId: warranty._id,
                 serialNumber: warranty.serialNumber,
                 warrantyPeriodYears: warranty.warrantyPeriodYears,
+                receiptUrl: warranty.receiptUrl,
                 user: warranty.userId,
                 product: warranty.productId,
               });
@@ -126,6 +128,12 @@ export default function WarrantyPage() {
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button 
+                          onClick={() => setSelectedClaim(claim)}
+                          className="flex items-center gap-1 rounded-md bg-slate-800 border border-slate-700 px-2.5 py-1 text-[10px] text-slate-300 font-semibold hover:bg-slate-700 transition-colors"
+                        >
+                          View Details
+                        </button>
+                        <button 
                           onClick={() => handleModerate(claim.warrantyId, claim._id, 'RESOLVED')}
                           disabled={actionLoading === claim._id}
                           className="flex items-center gap-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 text-[10px] text-emerald-400 font-semibold hover:bg-emerald-500/20 disabled:opacity-50"
@@ -154,6 +162,88 @@ export default function WarrantyPage() {
           </table>
         </div>
       </Card>
+
+      {/* Claim Details Modal */}
+      {selectedClaim && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center p-4 border-b border-slate-800 sticky top-0 bg-slate-900/95 backdrop-blur z-10">
+              <h2 className="text-lg font-bold text-slate-100">Claim Details</h2>
+              <button 
+                onClick={() => setSelectedClaim(null)}
+                className="p-1 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-md"
+              >
+                <XCircle className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* Description */}
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Issue Description</h3>
+                <p className="text-sm text-slate-300 bg-slate-800/50 p-4 rounded-lg whitespace-pre-wrap">
+                  {selectedClaim.description}
+                </p>
+              </div>
+
+              {/* Uploaded Files */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4" /> Purchase Receipt
+                  </h3>
+                  {selectedClaim.receiptUrl ? (
+                    <a href={selectedClaim.receiptUrl} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg border border-slate-700 hover:border-slate-500 transition-colors">
+                      <img src={selectedClaim.receiptUrl} alt="Receipt" className="w-full h-48 object-cover bg-slate-800" />
+                    </a>
+                  ) : (
+                    <div className="h-48 rounded-lg border border-dashed border-slate-700 flex items-center justify-center text-slate-500 text-sm bg-slate-800/30">
+                      No receipt uploaded
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-amber-500" /> Defect Photos
+                  </h3>
+                  {selectedClaim.images && selectedClaim.images.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      {selectedClaim.images.map((img: string, idx: number) => (
+                        <a key={idx} href={img} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg border border-slate-700 hover:border-amber-500/50 transition-colors">
+                          <img src={img} alt={`Defect ${idx + 1}`} className="w-full h-24 object-cover bg-slate-800" />
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="h-48 rounded-lg border border-dashed border-slate-700 flex items-center justify-center text-slate-500 text-sm bg-slate-800/30">
+                      No photos uploaded
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-800 bg-slate-900/50 flex justify-end gap-3 sticky bottom-0">
+              <button 
+                onClick={() => setSelectedClaim(null)}
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-300 hover:bg-slate-800 transition-colors"
+              >
+                Close
+              </button>
+              <button 
+                onClick={() => {
+                  handleModerate(selectedClaim.warrantyId, selectedClaim._id, 'RESOLVED');
+                  setSelectedClaim(null);
+                }}
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 flex items-center gap-2"
+              >
+                <CheckCircle className="h-4 w-4" /> Approve Claim
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
