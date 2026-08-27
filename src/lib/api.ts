@@ -160,8 +160,13 @@ export const adminApi = {
     apiClient.patch('/payments/admin/gateways', data),
 
   // Dealers
-  getDealers: (params?: { page?: number; limit?: number }): Promise<any> =>
-    apiClient.get('/dealers', { params }),
+  // NOTE: GET /dealers does not exist in the backend. Available dealer routes are:
+  //   - GET /admin/dealers    (admin-only, requires auth)
+  //   - GET /dealers/nearby   (public, requires lat/lng/radius query params)
+  // getDealers: (params?: { page?: number; limit?: number }): Promise<any> =>
+  //   apiClient.get('/dealers', { params }),
+  getDealers: (): Promise<any> =>
+    apiClient.get('/admin/dealers'),
 
   // Notifications
   broadcastNotification: (data: { title: string; body: string; type?: string }): Promise<any> =>
