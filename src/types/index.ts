@@ -91,15 +91,20 @@ export interface PromoBanner {
   createdAt: string;
 }
 
-export interface DealerPartner {
-  id: string;
-  companyName: string;
-  contactPerson: string;
-  email: string;
-  phone: string;
+export interface Dealer {
+  _id: string;
+  name: string;
+  address: string;
   city: string;
-  verified: boolean;
-  assignedRegion: string;
+  state: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  operatingHours?: string;
+  isActive: boolean;
+  location: {
+    type: 'Point';
+    coordinates: [number, number]; // [lng, lat]
+  };
 }
 
 export interface SystemAuditLog {
